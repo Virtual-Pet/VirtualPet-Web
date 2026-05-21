@@ -17,7 +17,7 @@ export default function ForgotPasswordPage() {
     setMessage("");
     try {
       const res = await authService.forgotPassword(email);
-      setMessage(res.message);
+      setMessage(res.message ?? "");
     } catch (err: unknown) {
       const apiErr = err as { message?: string };
       setError(apiErr.message ?? "No se pudo enviar la solicitud");

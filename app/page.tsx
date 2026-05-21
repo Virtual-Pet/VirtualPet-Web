@@ -27,7 +27,7 @@ export default async function HomePage() {
           </div>
           <div className="hidden rounded-3xl bg-white/15 p-8 backdrop-blur md:block">
             <p className="text-6xl">🐕 🐈</p>
-            <p className="mt-4 text-green-50">Más de {catalog.total} productos para perros y gatos</p>
+            <p className="mt-4 text-green-50">Más de {catalog.total ?? 0} productos para perros y gatos</p>
           </div>
         </div>
       </section>
@@ -49,8 +49,8 @@ export default async function HomePage() {
           </Link>
         </div>
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {catalog.items.map((p) => (
-            <ProductCard key={p.id} product={p} />
+          {(catalog.items ?? []).map((p) => (
+            <ProductCard key={p.id} product={p as any} />
           ))}
         </div>
       </section>

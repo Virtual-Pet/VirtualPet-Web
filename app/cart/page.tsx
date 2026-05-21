@@ -15,7 +15,7 @@ export default function CartPage() {
   async function load() {
     setLoading(true);
     try {
-      const data = await cartService.getCart(getToken() ?? undefined, getCartSession());
+      const data = await cartService.getCart();
       setCart(data);
     } finally {
       setLoading(false);
@@ -28,7 +28,7 @@ export default function CartPage() {
   }, []);
 
   async function remove(variantId: string) {
-    await cartService.removeItem(variantId, getToken() ?? undefined, getCartSession());
+    await cartService.removeItem(variantId);
     load();
   }
 

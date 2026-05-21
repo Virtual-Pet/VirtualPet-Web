@@ -17,11 +17,14 @@ function LoginForm() {
     e.preventDefault();
     try {
       const res = await authService.login(email, password);
-      saveAuth(res.token, res.user);
+      if (res.token) {
+        saveAuth(res.token as string, res.user as any);
+        window.location.href = "/";
+      }
       router.push(params.get("redirect") ?? "/");
     } catch (e: unknown) {
       const err = e as { message?: string };
-      setError(err.message ?? "Error");
+      setError(err.message ?? "");
     }
   }
 

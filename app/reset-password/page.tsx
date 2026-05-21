@@ -30,7 +30,7 @@ function ResetPasswordForm() {
     setMessage("");
     try {
       const res = await authService.resetPassword(token, password);
-      setMessage(res.message);
+      setMessage(res.message ?? "");
       setTimeout(() => router.push("/login"), 2000);
     } catch (err: unknown) {
       const apiErr = err as { message?: string };

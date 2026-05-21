@@ -20,8 +20,10 @@ export default function RegisterPage() {
     e.preventDefault();
     try {
       const res = await authService.register(form);
-      saveAuth(res.token, res.user);
-      router.push("/");
+      if (res.token) {
+        saveAuth(res.token as string, res.user as any);
+        window.location.href = "/";
+      }
     } catch (e: unknown) {
       const err = e as { message?: string };
       setError(err.message ?? "Error");

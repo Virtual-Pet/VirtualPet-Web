@@ -13,7 +13,7 @@ export function AddToCartButton({ variantId, disabled }: { variantId: string; di
   async function add() {
     setLoading(true);
     try {
-      await cartService.addItem(variantId, 1, getToken() ?? undefined, getCartSession());
+      await cartService.addItem(variantId, 1);
       setDone(true);
     } catch {
       alert("No se pudo agregar al carrito");

@@ -1,59 +1,50 @@
-import { api } from "@/lib/api";
-import type { Order } from "@/lib/types";
+import { OrderControllerService } from "@/lib/api-client";
+import { getCart } from "@/lib/services/cart";
+import { getUser } from "@/lib/auth";
 
 export type CheckoutResponse = { checkoutSessionId: string; paymentUrl: string; status: string; orderId: string | null };
 
-const useMock = process.env.NEXT_PUBLIC_USE_MOCK_SERVICES === "1";
-const ORDERS_KEY = "vp_mock_orders";
-
-function isClient() {
-  return typeof window !== "undefined";
-}
-
-function readOrders(): Order[] {
-  if (!isClient()) return [];
-  try {
-    const raw = localStorage.getItem(ORDERS_KEY);
-    return raw ? (JSON.parse(raw) as Order[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeOrders(orders: Order[]) {
-  if (!isClient()) return;
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-}
-
 export async function createCheckout(token: string, cartSession?: string, idempotencyKey?: string): Promise<CheckoutResponse> {
-  if (useMock) {
-    const externalId = crypto ? crypto.randomUUID() : String(Date.now());
-    return Promise.resolve({ checkoutSessionId: externalId, paymentUrl: `http://localhost:3000/checkout/mock?externalId=${externalId}`, status: "PENDING", orderId: null });
+  const cart = await getCart();
+  const user = getUser();
+  
+  if (cart.items.length === 0) {
+     throw new Error("El carrito está vacío");
   }
-  return api<CheckoutResponse>("/api/v1/checkout", {
-    method: "POST",
-    token,
-    cartSession,
-    headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
+
+  const order = await OrderControllerService.createOrder({
+      contactName: user?.name || "Invitado",
+      contactLastname: "",
+      contactEmail: user?.email || "guest@example.com",
+      contactPhone: "2230000000",
+      shippingAddress: {
+        street: user?.address || "Direccion",
+        number: "123",
+        city: "Mar del Plata",
+        zipCode: "7600",
+      },
+      items: cart.items.map((i) => ({
+        productVariantId: i.variantId,
+        sku: i.sku,
+        name: i.productName,
+        unitPrice: i.unitPrice,
+        quantity: i.quantity,
+      })),
   });
+
+  return {
+    checkoutSessionId: order.orderId ?? "",
+    paymentUrl: `/checkout/mock?externalId=${order.orderId ?? ""}`,
+    status: "PENDING",
+    orderId: order.orderId ?? null
+  };
 }
 
-export async function confirmMock(externalId: string): Promise<Order> {
-  if (useMock) {
-    const orders = readOrders();
-    const newOrder: Order = {
-      id: `ord_${Date.now()}`,
-      status: "CONFIRMED",
-      total: 1000,
-      createdAt: new Date().toISOString(),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      items: [{ productName: "Producto mock", quantity: 1 } as any],
-    } as Order;
-    orders.push(newOrder);
-    writeOrders(orders);
-    return Promise.resolve(newOrder);
+export async function confirmMock(externalId: string): Promise<void> {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("vp_mock_cart");
   }
-  return api<Order>("/api/v1/checkout/mock/confirm", { method: "POST", body: JSON.stringify({ externalId }) });
+  return Promise.resolve();
 }
 
 export const checkoutService = { createCheckout, confirmMock };
