@@ -52,6 +52,10 @@ export function SiteHeader() {
             <Link href="/about" className="hidden sm:inline hover:text-[var(--vp-primary)]">
               Nosotros
             </Link>
+            <Link href="/cart" className="flex items-center gap-1 hover:text-[var(--vp-primary)]">
+              <span className="text-base">🛒</span>
+              <span className="hidden sm:inline">Carrito</span>
+            </Link>
             {user ? (
               <>
                 <Link href="/account/orders" className="hover:text-[var(--vp-primary)]">

@@ -12,7 +12,14 @@ export async function createCheckout(token: string, cartSession?: string, idempo
      throw new Error("El carrito está vacío");
   }
 
-  const order = await OrderControllerService.createOrder({
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/v1/checkout`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+      ...(cartSession ? { "X-Cart-Session": cartSession } : {})
+    },
+    body: JSON.stringify({
       contactName: user?.name || "Invitado",
       contactLastname: "",
       contactEmail: user?.email || "guest@example.com",
@@ -22,20 +29,22 @@ export async function createCheckout(token: string, cartSession?: string, idempo
         number: "123",
         city: "Mar del Plata",
         zipCode: "7600",
-      },
-      items: cart.items.map((i) => ({
-        productVariantId: i.variantId,
-        sku: i.sku,
-        name: i.productName,
-        unitPrice: i.unitPrice,
-        quantity: i.quantity,
-      })),
+      }
+    })
   });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("Checkout failed:", res.status, errorText);
+    throw new Error(`No se pudo completar el checkout: ${res.status}`);
+  }
+
+  const order = await res.json();
 
   return {
     checkoutSessionId: order.orderId ?? "",
-    paymentUrl: `/checkout/mock?externalId=${order.orderId ?? ""}`,
-    status: "PENDING",
+    paymentUrl: order.paymentUrl ?? `/checkout/mock?externalId=${order.orderId ?? ""}`,
+    status: order.status ?? "PENDING",
     orderId: order.orderId ?? null
   };
 }

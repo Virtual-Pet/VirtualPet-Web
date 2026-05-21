@@ -1,54 +1,65 @@
-import type { Cart, CartItem } from "@/lib/types";
+import { api } from "@/lib/api";
+import { getCartSession } from "@/lib/cart-session";
 
-const STORAGE_KEY = "vp_mock_cart";
+export type CartItem = {
+  variantId: string;
+  productName: string;
+  sku: string;
+  attributes: any;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  imageUrl: string | null;
+};
 
-function defaultCart(): Cart {
-  return { items: [], subtotal: 0, itemCount: 0 } as Cart;
-}
+export type Cart = {
+  items: CartItem[];
+  subtotal: number;
+  itemCount: number;
+};
 
-function isClient() {
-  return typeof window !== "undefined";
-}
-
-function readCart(): Cart {
-  if (!isClient()) return defaultCart();
+export async function getCart(): Promise<Cart> {
+  const sessionId = getCartSession();
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Cart) : defaultCart();
+    return await api<Cart>("/api/v1/cart", { cartSession: sessionId });
   } catch {
-    return defaultCart();
+    return { items: [], subtotal: 0, itemCount: 0 };
   }
 }
 
-function writeCart(cart: Cart) {
-  if (!isClient()) return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
-}
+export type AddItemPayload = {
+  variantId: string;
+  productName: string;
+  sku: string;
+  attributes: Record<string, string>;
+  unitPrice: number;
+  imageUrl?: string | null;
+};
 
-export async function getCart(): Promise<Cart> {
-  return Promise.resolve(readCart());
-}
-
-export async function addItem(variantId: string, quantity = 1): Promise<Cart> {
-  const cart = readCart();
-  const existing = cart.items.find((i) => i.variantId === variantId);
-  if (existing) existing.quantity += quantity;
-  else
-    cart.items.push({ variantId, productName: "Producto agregado", sku: variantId, quantity, unitPrice: 0, lineTotal: 0, imageUrl: null } as CartItem);
-  
-  cart.subtotal = cart.items.reduce((s, it) => s + it.lineTotal, 0);
-  writeCart(cart);
-  return Promise.resolve(cart);
+export async function addItem(item: AddItemPayload, quantity = 1): Promise<Cart> {
+  const sessionId = getCartSession();
+  return await api<Cart>("/api/v1/cart/items", {
+    method: "POST",
+    cartSession: sessionId,
+    body: JSON.stringify({
+      variantId: item.variantId,
+      productName: item.productName,
+      sku: item.sku,
+      attributes: item.attributes,
+      quantity,
+      unitPrice: item.unitPrice,
+      imageUrl: item.imageUrl,
+    }),
+  });
 }
 
 export async function removeItem(variantId: string): Promise<Cart> {
-  const cart = readCart();
-  cart.items = cart.items.filter((i) => i.variantId !== variantId);
-  cart.subtotal = cart.items.reduce((s, it) => s + it.lineTotal, 0);
-  writeCart(cart);
-  return Promise.resolve(cart);
+  const sessionId = getCartSession();
+  return await api<Cart>(`/api/v1/cart/items/${variantId}`, {
+    method: "DELETE",
+    cartSession: sessionId,
+  });
 }
 
 export const cartService = { getCart, addItem, removeItem };
-
 export default cartService;

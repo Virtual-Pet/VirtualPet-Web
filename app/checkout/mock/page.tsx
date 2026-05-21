@@ -9,7 +9,7 @@ function MockCheckoutInner() {
   const params = useSearchParams();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const externalId = params.get("externalId") ?? "";
+  const externalId = params.get("orderId") ?? params.get("externalId") ?? "";
 
   async function confirm() {
     setLoading(true);

@@ -14,7 +14,9 @@ export default async function ProductPage({ params }: Props) {
 
   if (UUID_RE.test(slug)) {
     const byId = await productsService.getById(slug);
-    redirect(`/products/${byId.slug}`);
+    if (byId.slug && byId.slug !== slug && !UUID_RE.test(byId.slug)) {
+      redirect(`/products/${byId.slug}`);
+    }
   }
 
   let product: ProductDetailResponse;
@@ -59,12 +61,22 @@ export default async function ProductPage({ params }: Props) {
               <div key={v.id} className="rounded-xl border border-[var(--vp-border)] bg-white p-4">
                 <p className="font-mono text-xs text-zinc-400">{v.sku}</p>
                 <p className="mt-1 text-sm text-zinc-600">
-                  {v.attributes ? Object.entries(v.attributes).map(([k, val]) => `${k}: ${val}`).join(" · ") : ""}
+                  {v.attributes ? Object.entries(typeof v.attributes === "string" ? JSON.parse(v.attributes) : v.attributes).map(([k, val]) => `${k}: ${val}`).join(" · ") : ""}
                 </p>
                 <p className="mt-2 text-xl font-bold text-[var(--vp-primary-dark)]">{formatPrice(v.price ?? 0)}</p>
                 <p className="text-xs text-zinc-400">{(v.stock ?? 0) > 0 ? `${v.stock} en stock` : "Sin stock"}</p>
                 <div className="mt-4">
-                  <AddToCartButton variantId={v.id ?? ""} disabled={(v.stock ?? 0) <= 0} />
+                  <AddToCartButton 
+                    item={{
+                      variantId: v.id ?? "",
+                      productName: product.name ?? "",
+                      sku: v.sku ?? "",
+                      attributes: typeof v.attributes === "string" ? JSON.parse(v.attributes) : (v.attributes ?? {}),
+                      unitPrice: v.price ?? 0,
+                      imageUrl: v.imageUrl ?? hero?.imageUrl ?? ""
+                    }} 
+                    disabled={(v.stock ?? 0) <= 0} 
+                  />
                 </div>
               </div>
             ))}

@@ -6,14 +6,16 @@ import { getCartSession } from "@/lib/cart-session";
 import { getToken } from "@/lib/auth";
 
 
-export function AddToCartButton({ variantId, disabled }: { variantId: string; disabled?: boolean }) {
+import { AddItemPayload } from "@/lib/services/cart";
+
+export function AddToCartButton({ item, disabled }: { item: AddItemPayload; disabled?: boolean }) {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
   async function add() {
     setLoading(true);
     try {
-      await cartService.addItem(variantId, 1);
+      await cartService.addItem(item, 1);
       setDone(true);
     } catch {
       alert("No se pudo agregar al carrito");
