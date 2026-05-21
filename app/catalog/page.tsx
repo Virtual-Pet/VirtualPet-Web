@@ -19,6 +19,8 @@ type Props = {
   }>;
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function CatalogPage({ searchParams }: Props) {
   const params = await searchParams;
   const page = params.page ?? "0";

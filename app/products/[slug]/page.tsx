@@ -9,6 +9,8 @@ type Props = { params: Promise<{ slug: string }> };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export const dynamic = "force-dynamic";
+
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
 
