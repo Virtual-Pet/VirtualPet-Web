@@ -5,7 +5,7 @@ export type CartItem = {
   variantId: string;
   productName: string;
   sku: string;
-  attributes: any;
+  attributes: Record<string, string>;
   quantity: number;
   unitPrice: number;
   lineTotal: number;

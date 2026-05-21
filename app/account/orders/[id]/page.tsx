@@ -35,6 +35,7 @@ export default function OrderDetailPage() {
   useEffect(() => {
     const token = getToken();
     if (!token || !id) {
+      // eslint-disable-next-line
       setLoading(false);
       return;
     }

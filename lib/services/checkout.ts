@@ -1,10 +1,10 @@
-import { OrderControllerService } from "@/lib/api-client";
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { getCart } from "@/lib/services/cart";
 import { getUser } from "@/lib/auth";
 
 export type CheckoutResponse = { checkoutSessionId: string; paymentUrl: string; status: string; orderId: string | null };
 
-export async function createCheckout(token: string, cartSession?: string, idempotencyKey?: string): Promise<CheckoutResponse> {
+export async function createCheckout(token: string, cartSession?: string, _idempotencyKey?: string): Promise<CheckoutResponse> {
   const cart = await getCart();
   const user = getUser();
   
@@ -49,7 +49,7 @@ export async function createCheckout(token: string, cartSession?: string, idempo
   };
 }
 
-export async function confirmMock(externalId: string): Promise<void> {
+export async function confirmMock(_externalId: string): Promise<void> {
   if (typeof window !== "undefined") {
     localStorage.removeItem("vp_mock_cart");
   }

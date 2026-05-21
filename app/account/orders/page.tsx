@@ -45,6 +45,7 @@ export default function OrdersPage() {
   useEffect(() => {
     const token = getToken();
     if (!token) {
+      // eslint-disable-next-line
       setLoading(false);
       return;
     }

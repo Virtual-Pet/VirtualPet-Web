@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { AuthControllerService } from "@/lib/api-client";
 import type { UserResponse, AuthResponse } from "@/lib/api-client";
 

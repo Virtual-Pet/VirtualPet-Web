@@ -1,7 +1,7 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
+ 
 import type { CatalogFacetsResponse } from '../models/CatalogFacetsResponse';
 import type { CategoryResponse } from '../models/CategoryResponse';
 import type { ProductDetailResponse } from '../models/ProductDetailResponse';

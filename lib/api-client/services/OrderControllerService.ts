@@ -1,7 +1,7 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
+ 
 import type { CreateOrderRequest } from '../models/CreateOrderRequest';
 import type { OrderResponse } from '../models/OrderResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
