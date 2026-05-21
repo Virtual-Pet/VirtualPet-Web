@@ -81,7 +81,36 @@ export type Order = {
   id: string;
   status: string;
   total: number;
-  shippingCost: number;
+  shippingCost?: number;
   createdAt: string;
-  items: { variantId: string; productName: string; sku: string; quantity: number; unitPrice: number }[];
+  contactName?: string;
+  contactLastname?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  shippingAddress?: {
+    street: string;
+    num: string;
+    city: string;
+    zipCode: string;
+  };
+  items: OrderItem[];
+};
+
+export type OrderItem = {
+  variantId: string;
+  productName: string;
+  sku: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal?: number;
+};
+
+export type BackofficeOrder = {
+  shipmentId: string;
+  orderId: string;
+  shipmentStatus: string;
+  contactName: string;
+  contactEmail: string;
+  total: number;
+  createdAt: string;
 };
