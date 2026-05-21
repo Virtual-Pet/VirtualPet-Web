@@ -1,7 +1,7 @@
 import { CatalogFilters } from "@/components/CatalogFilters";
 import { ProductCard } from "@/components/ProductCard";
 import productsService from "@/lib/services/products";
-import type { CatalogFacets, ProductPage } from "@/lib/types";
+
 import Link from "next/link";
 import { Suspense } from "react";
 

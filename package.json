@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "api:generate": "openapi --input http://localhost:8080/v3/api-docs --output ./lib/api-client --client fetch"
+    "api:generate": "curl -s http://localhost:8080/v3/api-docs > api-docs.json && openapi --input ./api-docs.json --output ./lib/api-client --client fetch"
   },
   "dependencies": {
     "next": "16.2.6",

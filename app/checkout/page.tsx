@@ -6,12 +6,7 @@ import checkoutService from "@/lib/services/checkout";
 import { getToken } from "@/lib/auth";
 import { getCartSession } from "@/lib/cart-session";
 
-type CheckoutResponse = {
-  checkoutSessionId: string;
-  paymentUrl: string;
-  status: string;
-  orderId: string | null;
-};
+
 
 export default function CheckoutPage() {
   const router = useRouter();

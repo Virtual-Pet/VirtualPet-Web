@@ -4,7 +4,7 @@ import { useState } from "react";
 import cartService from "@/lib/services/cart";
 import { getCartSession } from "@/lib/cart-session";
 import { getToken } from "@/lib/auth";
-import type { Cart } from "@/lib/types";
+
 
 export function AddToCartButton({ variantId, disabled }: { variantId: string; disabled?: boolean }) {
   const [loading, setLoading] = useState(false);

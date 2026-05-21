@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import checkoutService from "@/lib/services/checkout";
-import type { Order } from "@/lib/types";
+
 
 function MockCheckoutInner() {
   const params = useSearchParams();

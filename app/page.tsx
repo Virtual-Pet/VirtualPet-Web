@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
 import productsService from "@/lib/services/products";
-import type { ProductPage } from "@/lib/types";
+
 
 export default async function HomePage() {
   const catalog = await productsService.list("page=0&size=8&sort=price_asc");
