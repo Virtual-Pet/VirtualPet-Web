@@ -39,7 +39,7 @@ export class AuthControllerService {
     ): CancelablePromise<AuthResponse> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/auth/register',
+            url: '/api/v1/customers/register',
             body: requestBody,
             mediaType: 'application/json',
         });
@@ -69,7 +69,7 @@ export class AuthControllerService {
     ): CancelablePromise<AuthResponse> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/auth/login',
+            url: '/api/v1/customers/login',
             body: requestBody,
             mediaType: 'application/json',
         });
@@ -96,7 +96,7 @@ export class AuthControllerService {
     public static me(): CancelablePromise<UserResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/auth/me',
+            url: '/api/v1/customers/me',
         });
     }
 }
