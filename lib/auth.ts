@@ -7,7 +7,9 @@ export type User = {
   email: string;
   role: string;
   name: string;
-  address: string;
+  lastname?: string;
+  dni?: string;
+  phone?: string;
 };
 
 export function saveAuth(token: string, user: User) {

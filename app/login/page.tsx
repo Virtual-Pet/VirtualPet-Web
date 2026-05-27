@@ -48,12 +48,12 @@ function LoginForm() {
           required
         />
         {error && <p className="text-red-600">{error}</p>}
-        <button type="submit" className="w-full rounded-lg bg-[var(--vp-primary)] py-2 font-medium text-white hover:bg-[var(--vp-primary-dark)]">
+        <button type="submit" className="w-full rounded-lg bg-(--vp-primary) py-2 font-medium text-white hover:bg-(--vp-primary-dark)">
           Entrar
         </button>
       </form>
       <p className="mt-3 text-sm">
-        <Link href="/forgot-password" className="text-[var(--vp-accent)] hover:underline">
+        <Link href="/forgot-password" className="text-(--vp-accent) hover:underline">
           ¿Olvidaste tu contraseña?
         </Link>
       </p>
