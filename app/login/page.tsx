@@ -18,11 +18,13 @@ function LoginForm() {
     e.preventDefault();
     try {
       const res = await authService.login(email, password);
-      if (res.token) {
-        saveAuth(res.token as string, res.user as any);
+      const token = (res as any).accessToken || (res as any).token;
+      if (token) {
+        saveAuth(token, res.user as any);
         window.location.href = "/";
+      } else {
+        router.push(params.get("redirect") ?? "/");
       }
-      router.push(params.get("redirect") ?? "/");
     } catch (e: unknown) {
       const err = e as { message?: string };
       setError(err.message ?? "");
