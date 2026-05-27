@@ -58,7 +58,7 @@ export default async function CatalogPage({ searchParams }: Props) {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-zinc-900">Catálogo</h1>
-              <p className="mt-1 text-sm text-zinc-500">{catalog.total ?? 0} productos encontrados</p>
+              <p className="mt-1 text-sm text-zinc-500">{((catalog as any).data || catalog.items || []).length} productos en esta página</p>
             </div>
             <form method="get" className="flex flex-wrap items-center gap-2">
               {params.q && <input type="hidden" name="q" value={params.q} />}
@@ -82,12 +82,12 @@ export default async function CatalogPage({ searchParams }: Props) {
           </div>
 
           <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {(catalog.items ?? []).map((p) => (
-              <ProductCard key={p.id} product={p as any} />
+            {((catalog as any).data || catalog.items || []).map((p: any) => (
+              <ProductCard key={p.id} product={p} />
             ))}
           </div>
 
-          {(catalog.items ?? []).length === 0 && (
+          {((catalog as any).data || catalog.items || []).length === 0 && (
             <p className="mt-12 text-center text-zinc-500">No hay productos con esos filtros.</p>
           )}
 
@@ -98,7 +98,7 @@ export default async function CatalogPage({ searchParams }: Props) {
               </Link>
             )}
             <span className="flex items-center px-3 text-sm text-zinc-500">Página {Number(page) + 1}</span>
-            {(Number(page) + 1) * (catalog.size ?? 0) < (catalog.total ?? 0) && (
+            {((catalog as any).hasMore || ((Number(page) + 1) * (catalog.size ?? 0) < (catalog.total ?? 0))) && (
               <Link href={pageHref(Number(page) + 1)} className="rounded-lg border bg-white px-4 py-2 text-sm hover:bg-zinc-50">
                 Siguiente →
               </Link>

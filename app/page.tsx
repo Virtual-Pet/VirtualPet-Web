@@ -52,7 +52,7 @@ export default async function HomePage() {
           </Link>
         </div>
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {(catalog.items ?? []).map((p) => (
+          {((catalog as any).data || catalog.items || []).map((p: any) => (
             <ProductCard key={p.id} product={p as any} />
           ))}
         </div>

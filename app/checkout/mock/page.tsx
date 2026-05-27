@@ -10,14 +10,16 @@ function MockCheckoutInner() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const externalId = params.get("orderId") ?? params.get("externalId") ?? "";
+  const providerPaymentId = params.get("providerPaymentId");
 
   async function confirm() {
     setLoading(true);
     try {
-      await checkoutService.confirmMock(externalId);
+      await checkoutService.confirmMock(externalId, providerPaymentId);
       router.push("/account/orders");
-    } catch {
-      alert("Error al confirmar pago");
+    } catch (e: any) {
+      console.error(e);
+      alert("Error al confirmar pago: " + (e.message || String(e)));
     } finally {
       setLoading(false);
     }
