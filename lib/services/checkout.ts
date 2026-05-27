@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { getCart } from "@/lib/services/cart";
 import { getUser, getToken } from "@/lib/auth";
 

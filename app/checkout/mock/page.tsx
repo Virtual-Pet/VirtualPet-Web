@@ -17,9 +17,9 @@ function MockCheckoutInner() {
     try {
       await checkoutService.confirmMock(externalId, providerPaymentId);
       router.push("/account/orders");
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      alert("Error al confirmar pago: " + (e.message || String(e)));
+      alert("Error al confirmar pago: " + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoading(false);
     }
