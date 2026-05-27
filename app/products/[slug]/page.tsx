@@ -1,9 +1,12 @@
 import { formatPrice } from "@/lib/api";
 import productsService from "@/lib/services/products";
 import type { ProductDetailResponse } from "@/lib/api-client";
+import type { VariantResponse } from "@/lib/api-client/models/VariantResponse";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AddToCartButton } from "@/components/AddToCartButton";
+
+type VariantView = VariantResponse & { skuId?: string; available?: boolean };
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -21,8 +24,8 @@ export default async function ProductPage({ params }: Props) {
       const byId = await productsService.getById(slug);
       if (byId) {
         product = byId;
-        if ((byId as any).slug && (byId as any).slug !== slug && !UUID_RE.test((byId as any).slug)) {
-          redirect(`/products/${(byId as any).slug}`);
+        if (byId.slug && byId.slug !== slug && !UUID_RE.test(byId.slug)) {
+          redirect(`/products/${byId.slug}`);
         }
       }
     } catch {
@@ -38,8 +41,8 @@ export default async function ProductPage({ params }: Props) {
     }
   }
 
-  const hero = (product as any).images?.[0] || product.variants?.find((v) => v.imageUrl)?.imageUrl || product.variants?.[0]?.imageUrl;
-  const skus = (product as any).skus || product.variants || [];
+  const hero = product.variants?.find((v) => v.imageUrl)?.imageUrl || product.variants?.[0]?.imageUrl;
+  const skus: VariantView[] = (product.variants as VariantView[]) || [];
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
@@ -63,14 +66,14 @@ export default async function ProductPage({ params }: Props) {
 
         <div>
           <p className="text-sm font-medium uppercase tracking-wide text-[var(--vp-primary)]">
-            {product.petType} · {product.category} · {product.brand || (product as any).category}
+            {product.petType} · {product.category} · {product.brand || product.category}
           </p>
           <h1 className="mt-2 text-3xl font-bold text-zinc-900">{product.name}</h1>
           <p className="mt-4 leading-relaxed text-zinc-600">{product.description}</p>
 
           <div className="mt-8 space-y-3">
             <h2 className="text-sm font-semibold text-zinc-900">Variantes disponibles</h2>
-            {skus.map((v: any) => (
+            {skus.map((v) => (
               <div key={v.id || v.skuId} className="rounded-xl border border-[var(--vp-border)] bg-white p-4">
                 <p className="font-mono text-xs text-zinc-400">{v.sku || v.skuId}</p>
                 <p className="mt-1 text-sm text-zinc-600">
