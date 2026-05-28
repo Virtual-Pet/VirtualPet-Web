@@ -41,7 +41,7 @@ export default async function ProductPage({ params }: Props) {
         <div className="aspect-square overflow-hidden rounded-2xl border border-[var(--vp-border)] bg-white">
           {hero ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={hero} alt={product.name ?? ""} className="h-full w-full object-cover" />
+            <img src={`${process.env.NEXT_PUBLIC_S3_BASE_URL}${hero}`} alt={product.name ?? ""} className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full items-center justify-center text-zinc-400">Sin imagen</div>
           )}
