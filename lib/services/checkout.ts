@@ -2,6 +2,17 @@ import { getCart } from "@/lib/services/cart";
 import { getToken } from "@/lib/auth";
 import { CheckoutService, PaymentsService, OpenAPI } from "@/lib/api-client";
 
+export function safeRandomUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 export type CheckoutResponse = { checkoutSessionId: string; paymentUrl: string; status: string; orderId: string | null };
 
 export async function createCheckout(
@@ -32,7 +43,7 @@ export async function createCheckout(
   await CheckoutService.putCheckoutSessionsShippingAddress(sessionId!, shippingAddress);
 
   // 3. Create Payment Intent
-  const key = idempotencyKey || crypto.randomUUID();
+  const key = idempotencyKey || safeRandomUUID();
   const payment = await CheckoutService.postCheckoutSessionsPaymentIntents(sessionId!, key);
 
   let paymentUrl = payment.checkoutUrl ?? `/checkout/mock?externalId=${sessionId}`;
@@ -60,7 +71,7 @@ export async function confirmMock(externalId: string, providerPaymentId?: string
     await PaymentsService.postFakeProviderPayments(providerPaymentId, 'approve');
     
     // 2. Confirm the checkout session to create the order
-    const idempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString();
+    const idempotencyKey = safeRandomUUID();
     await CheckoutService.postCheckoutSessionsConfirm(externalId, idempotencyKey);
   }
 
@@ -70,6 +81,6 @@ export async function confirmMock(externalId: string, providerPaymentId?: string
   return Promise.resolve();
 }
 
-export const checkoutService = { createCheckout, confirmMock };
+export const checkoutService = { createCheckout, confirmMock, safeRandomUUID };
 
 export default checkoutService;
