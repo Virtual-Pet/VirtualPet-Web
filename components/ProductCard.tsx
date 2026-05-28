@@ -27,7 +27,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
         <h3 className="font-semibold text-zinc-900">{product.name}</h3>
         <p className="line-clamp-2 text-sm text-zinc-500">{product.description}</p>
         <p className="mt-auto pt-2 text-lg font-bold text-[var(--vp-primary-dark)]">
-          desde {formatPrice(product.basePrice ?? product.minPrice)}
+          desde {formatPrice(Number(product.basePrice ?? product.basePrice ?? "0"))}
         </p>
       </div>
     </Link>
