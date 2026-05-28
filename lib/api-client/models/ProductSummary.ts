@@ -7,6 +7,7 @@ export type ProductSummary = {
     id?: string;
     name?: string;
     category?: string;
+    brand?: string;
     petType?: string;
     basePrice?: Money;
     thumbnail?: string;

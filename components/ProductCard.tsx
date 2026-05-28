@@ -1,18 +1,18 @@
 import Link from "next/link";
 import { formatPrice } from "@/lib/api";
-import type { ProductSummary } from "@/lib/types";
+import { ProductSummary } from "@/lib/api-client";
 
 export function ProductCard({ product }: { product: ProductSummary }) {
   return (
     <Link
-      href={`/products/${product.slug || product.id}`}
+      href={`/products/${product.id}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:shadow-md"
     >
       <div className="aspect-square bg-zinc-100">
-        {product.imageUrl ? (
+        {product.thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={`${process.env.NEXT_PUBLIC_S3_BASE_URL}${product.imageUrl}`}
+            src={`${process.env.NEXT_PUBLIC_S3_BASE_URL}${product.thumbnail}`}
             alt={product.name ?? ""}
             className="h-full w-full object-cover transition group-hover:scale-105"
           />
