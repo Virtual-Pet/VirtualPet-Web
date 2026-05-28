@@ -1,12 +1,22 @@
 import { getCart } from "@/lib/services/cart";
-import { getUser, getToken } from "@/lib/auth";
+import { getToken } from "@/lib/auth";
 import { CheckoutService, PaymentsService, OpenAPI } from "@/lib/api-client";
 
 export type CheckoutResponse = { checkoutSessionId: string; paymentUrl: string; status: string; orderId: string | null };
 
-export async function createCheckout(token: string, cartSession?: string, idempotencyKey?: string): Promise<CheckoutResponse> {
+export async function createCheckout(
+  token: string,
+  shippingAddress: {
+    addressLine: string;
+    city: string;
+    state?: string;
+    country?: string;
+    postalCode: string;
+  },
+  cartSession?: string,
+  idempotencyKey?: string
+): Promise<CheckoutResponse> {
   const cart = await getCart();
-  const user = getUser();
   
   if (cart.items.length === 0) {
      throw new Error("El carrito está vacío");
@@ -19,13 +29,7 @@ export async function createCheckout(token: string, cartSession?: string, idempo
   const sessionId = session.checkoutSessionId;
 
   // 2. Set Shipping Address
-  await CheckoutService.putCheckoutSessionsShippingAddress(sessionId!, {
-    addressLine: user?.address || "Direccion 123",
-    city: "Mar del Plata",
-    state: "Buenos Aires",
-    country: "Argentina",
-    postalCode: "7600",
-  });
+  await CheckoutService.putCheckoutSessionsShippingAddress(sessionId!, shippingAddress);
 
   // 3. Create Payment Intent
   const key = idempotencyKey || crypto.randomUUID();
