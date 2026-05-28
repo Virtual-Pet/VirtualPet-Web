@@ -66,11 +66,17 @@ export async function confirmMock(externalId: string, providerPaymentId?: string
   const token = getToken();
   OpenAPI.TOKEN = token || "";
 
-  if (providerPaymentId && token) {
-    // 1. Tell fake provider the payment was successful
-    await PaymentsService.postFakeProviderPayments(providerPaymentId, 'approve');
+  if (token) {
+    if (providerPaymentId) {
+      try {
+        // 1. Tell fake provider the payment was successful (if exists)
+        await PaymentsService.postFakeProviderPayments(providerPaymentId, 'approve');
+      } catch (e) {
+        console.warn("Could not approve fake payment provider: ", e);
+      }
+    }
     
-    // 2. Confirm the checkout session to create the order
+    // 2. Confirm the checkout session to create the order (always)
     const idempotencyKey = safeRandomUUID();
     await CheckoutService.postCheckoutSessionsConfirm(externalId, idempotencyKey);
   }
