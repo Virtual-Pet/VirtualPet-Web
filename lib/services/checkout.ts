@@ -87,9 +87,35 @@ export async function confirmMock(externalId: string, providerPaymentId?: string
       }
     }
 
-    // Confirm the checkout session → creates the order (always runs)
+    // Confirm the checkout session → creates the order (always runs).
+    // Retry up to 3 times with a 1 s delay in case the webhook is still processing
+    // and the payment status hasn't transitioned to PAID yet (202 Accepted).
     const idempotencyKey = safeRandomUUID();
-    await CheckoutService.postCheckoutSessionsConfirm(externalId, idempotencyKey);
+    let orderConfirmed = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+      try {
+        // The generated client throws on non-2xx, but 202 is 2xx — it won't throw.
+        // We call confirm and if we get back a non-null body (order created) we stop.
+        const result = await CheckoutService.postCheckoutSessionsConfirm(externalId, idempotencyKey);
+        // result has orderId when 201 CREATED; it's null/undefined on 202 ACCEPTED
+        if (result && (result as { orderId?: string }).orderId) {
+          orderConfirmed = true;
+          break; // Order created, done
+        }
+        // 202 Accepted: payment still pending, retry
+      } catch (confirmErr: unknown) {
+        // 4xx/5xx: the backend now falls back to DB lookup if session expired.
+        // Any unrecoverable error on last attempt is re-thrown.
+        console.warn(`Confirm attempt ${attempt + 1} failed:`, confirmErr);
+        if (attempt === 2) throw confirmErr;
+      }
+    }
+    if (!orderConfirmed) {
+      console.warn("Payment still pending after 3 confirm attempts; order may not be visible yet.");
+    }
   }
 
   if (typeof window !== "undefined") {
