@@ -1,7 +1,7 @@
 import { OrdersService, OpenAPI } from "@/lib/api-client";
 import type { Order } from "@/lib/types";
 
-const useMock = process.env.NEXT_PUBLIC_USE_MOCK_SERVICES === "1";
+const useMock = ["1", "true"].includes(process.env.NEXT_PUBLIC_USE_MOCK_SERVICES ?? "");
 const ORDERS_KEY = "vp_mock_orders";
 
 function isClient() {
