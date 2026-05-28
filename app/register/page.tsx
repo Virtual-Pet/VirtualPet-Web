@@ -6,29 +6,25 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import authService from "@/lib/services/auth";
-import { saveAuth } from "@/lib/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [form, setForm] = useState({
     email: "",
     password: "",
-    name: "",
-    address: "Mar del Plata, Buenos Aires",
+    firstName: "",
+    lastName: "",
   });
   const [error, setError] = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const res = await authService.register(form);
-      if (res.token) {
-        saveAuth(res.token as string, res.user as any);
-        window.location.href = "/";
-      }
+      await authService.register(form);
+      router.push("/login?registered=true");
     } catch (e: unknown) {
-      const err = e as { message?: string };
-      setError(err.message ?? "Error");
+      const err = e as { message?: string, body?: any };
+      setError(err.body?.detail ?? err.message ?? "Error");
     }
   }
 
@@ -36,11 +32,15 @@ export default function RegisterPage() {
     <section className="mx-auto max-w-md px-4 py-16">
       <h1 className="text-2xl font-bold">Crear cuenta</h1>
       <form onSubmit={submit} className="mt-6 space-y-4">
-        {(["name", "email", "password", "address"] as const).map((field) => (
+        {(["firstName", "lastName", "email", "password"] as const).map((field) => (
           <input
             key={field}
             type={field === "password" ? "password" : field === "email" ? "email" : "text"}
-            placeholder={field}
+            placeholder={
+              field === "firstName" ? "Nombre" : 
+              field === "lastName" ? "Apellido" : 
+              field === "email" ? "Email" : "Contraseña"
+            }
             value={form[field]}
             onChange={(e) => setForm({ ...form, [field]: e.target.value })}
             className="w-full rounded-lg border px-3 py-2"

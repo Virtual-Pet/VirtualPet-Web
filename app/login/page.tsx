@@ -18,22 +18,25 @@ function LoginForm() {
     e.preventDefault();
     try {
       const res = await authService.login(email, password);
-      const token = (res as any).accessToken || (res as any).token;
+      const token = res.accessToken;
       if (token) {
         saveAuth(token, res.user as any);
-        window.location.href = "/";
-      } else {
-        router.push(params.get("redirect") ?? "/");
+        window.location.href = params.get("redirect") ?? "/";
       }
     } catch (e: unknown) {
-      const err = e as { message?: string };
-      setError(err.message ?? "");
+      const err = e as { message?: string, body?: any };
+      setError(err.body?.detail ?? err.message ?? "Credenciales inválidas");
     }
   }
 
   return (
     <section className="mx-auto max-w-md px-4 py-16">
       <h1 className="text-2xl font-bold">Ingresar</h1>
+      {params.get("registered") && (
+        <div className="mt-4 rounded-lg bg-green-50 p-4 text-green-800">
+          Registro exitoso. Ya podés iniciar sesión.
+        </div>
+      )}
       <form onSubmit={submit} className="mt-6 space-y-4">
         <input
           type="email"
@@ -54,13 +57,8 @@ function LoginForm() {
           Entrar
         </button>
       </form>
-      <p className="mt-3 text-sm">
-        <Link href="/forgot-password" className="text-[var(--vp-accent)] hover:underline">
-          ¿Olvidaste tu contraseña?
-        </Link>
-      </p>
       <p className="mt-4 text-sm">
-        ¿No tenés cuenta? <Link href="/register">Registrate</Link>
+        ¿No tenés cuenta? <Link href="/register" className="text-[var(--vp-primary)] font-semibold hover:underline">Registrate</Link>
       </p>
     </section>
   );

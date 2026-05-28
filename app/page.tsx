@@ -7,7 +7,7 @@ import productsService from "@/lib/services/products";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const catalog = await productsService.list("page=0&size=8&sort=price_asc");
+  const catalog = await productsService.list("limit=8");
 
   return (
     <>
@@ -30,7 +30,7 @@ export default async function HomePage() {
           </div>
           <div className="hidden rounded-3xl bg-white/15 p-8 backdrop-blur md:block">
             <p className="text-6xl">🐕 🐈</p>
-            <p className="mt-4 text-green-50">Más de {catalog.total ?? 0} productos para perros y gatos</p>
+            <p className="mt-4 text-green-50">Cientos de productos para perros y gatos</p>
           </div>
         </div>
       </section>
@@ -52,7 +52,7 @@ export default async function HomePage() {
           </Link>
         </div>
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {((catalog as any).data || catalog.items || []).map((p: any) => (
+          {(catalog.data || []).map((p: any) => (
             <ProductCard key={p.id} product={p as any} />
           ))}
         </div>

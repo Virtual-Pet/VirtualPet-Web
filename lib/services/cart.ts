@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { CartService } from "@/lib/api-client";
 
 export type CartItem = {
   variantId: string;
@@ -63,11 +64,7 @@ export async function addItem(item: AddItemPayload, quantity = 1): Promise<Cart>
   const token = getToken();
   if (token) {
     try {
-      await api(`/api/v1/cart/items/${item.variantId}`, {
-        method: "PUT",
-        token,
-        body: JSON.stringify({ quantity: newTotalQuantity }),
-      });
+      await CartService.putCartItems(item.variantId, { quantity: newTotalQuantity });
     } catch (e) {
       console.error("Failed to sync cart item to backend", e);
       throw new Error("No se pudo agregar al carrito en el servidor");
@@ -104,10 +101,7 @@ export async function removeItem(variantId: string): Promise<Cart> {
   const token = getToken();
   if (token) {
     try {
-      await api(`/api/v1/cart/items/${variantId}`, {
-        method: "DELETE",
-        token,
-      });
+      await CartService.deleteCartItems(variantId);
     } catch (e) {
       console.error("Failed to remove cart item from backend", e);
     }

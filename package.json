@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "api:generate": "curl -s http://localhost:8080/v3/api-docs > api-docs.json && openapi --input ./api-docs.json --output ./lib/api-client --client fetch"
+    "api:generate": "openapi --input ../VirtualPet-Backend/docs/api/virtualpet-openapi.yaml --output ./lib/api-client --client fetch"
   },
   "dependencies": {
     "next": "16.2.6",

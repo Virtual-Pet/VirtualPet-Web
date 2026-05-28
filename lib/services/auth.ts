@@ -1,23 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { AuthControllerService } from "@/lib/api-client";
-import type { UserResponse, AuthResponse } from "@/lib/api-client";
+import { AuthService } from "@/lib/api-client";
+import type { User as ApiUser, UserSummary } from "@/lib/api-client";
 
-export type User = UserResponse;
+export type User = ApiUser | UserSummary;
 
 export const authService = {
-  login: (email: string, password: string) => AuthControllerService.login({ email, password }),
-  logout: () => Promise.resolve(),
-  register: (payload: { email: string; password: string; name: string; address: string; phone?: string; lastname?: string }) =>
-    AuthControllerService.register({
+  login: (email: string, password: string) => AuthService.postAuthLogin({ email, password }),
+  logout: () => AuthService.postAuthLogout({ refreshToken: "dummy" }), // Real logout will need the token logic handled elsewhere if needed
+  register: (payload: { email: string; password: string; firstName: string; lastName: string; }) =>
+    AuthService.postAuthRegisterCustomer({
       email: payload.email,
       password: payload.password,
-      name: payload.name,
-      lastname: payload.lastname || "",
-      phone: payload.phone || "",
-      dni: "00000000",
+      firstName: payload.firstName,
+      lastName: payload.lastName,
     }),
-  forgotPassword: (email: string) => AuthControllerService.forgotPassword({ email }),
-  resetPassword: (token: string, password: string) => AuthControllerService.resetPassword({ token, password }),
 };
 
 export default authService;
