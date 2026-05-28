@@ -12,7 +12,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
         {product.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={product.imageUrl}
+            src={`${process.env.NEXT_PUBLIC_S3_BASE_URL}${product.imageUrl}`}
             alt={product.name ?? ""}
             className="h-full w-full object-cover transition group-hover:scale-105"
           />
