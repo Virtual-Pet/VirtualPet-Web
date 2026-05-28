@@ -13,8 +13,11 @@ export function safeRandomUUID(): string {
   });
 }
 
-export type CheckoutResponse = { checkoutSessionId: string; paymentUrl: string; status: string; orderId: string | null };
-
+/**
+ * Creates a checkout session and sets the shipping address.
+ * Does NOT create a payment intent — payment is handled externally
+ * (cash on delivery, bank transfer, in-home card payment, etc.).
+ */
 export async function createCheckout(
   token: string,
   shippingAddress: {
@@ -23,54 +26,36 @@ export async function createCheckout(
     state?: string;
     country?: string;
     postalCode: string;
-  },
-  cartSession?: string,
-  idempotencyKey?: string
-): Promise<CheckoutResponse> {
+  }
+): Promise<{ checkoutSessionId: string }> {
   const cart = await getCart();
-  
   if (cart.items.length === 0) {
-     throw new Error("El carrito está vacío");
+    throw new Error("El carrito está vacío");
   }
 
   OpenAPI.TOKEN = token;
 
-  // 1. Start Checkout Session
+  // 1. Create checkout session from current cart
   const session = await CheckoutService.postCartCheckout();
-  const sessionId = session.checkoutSessionId;
+  const sessionId = session.checkoutSessionId!;
 
-  // 2. Set Shipping Address
-  await CheckoutService.putCheckoutSessionsShippingAddress(sessionId!, shippingAddress);
+  // 2. Set the shipping address
+  await CheckoutService.putCheckoutSessionsShippingAddress(sessionId, shippingAddress);
 
-  // 3. Create Payment Intent
-  const key = idempotencyKey || safeRandomUUID();
-  const payment = await CheckoutService.postCheckoutSessionsPaymentIntents(sessionId!, key);
-
-  let paymentUrl = payment.checkoutUrl ?? `/checkout/mock?externalId=${sessionId}`;
-  if (paymentUrl.includes("/fake-checkout")) {
-    paymentUrl = paymentUrl.replace("/fake-checkout", "/checkout/mock");
-    if (!paymentUrl.includes("externalId=")) {
-      paymentUrl += `&externalId=${sessionId}`;
-    }
-  }
-
-  return {
-    checkoutSessionId: sessionId!,
-    paymentUrl,
-    status: payment.status ?? "PENDING",
-    orderId: sessionId!
-  };
+  return { checkoutSessionId: sessionId };
 }
 
-export async function confirmMock(externalId: string, providerPaymentId?: string | null): Promise<void> {
+/**
+ * Places the order by confirming the checkout session.
+ * The backend creates the order immediately — no payment verification needed.
+ */
+export async function placeOrder(sessionId: string): Promise<void> {
   const token = getToken();
   OpenAPI.TOKEN = token || "";
 
   if (token) {
-    // The backend auto-approves the fake payment and creates the order in a single call.
-    // No webhook or fake-provider interaction needed.
     const idempotencyKey = safeRandomUUID();
-    await CheckoutService.postCheckoutSessionsConfirm(externalId, idempotencyKey);
+    await CheckoutService.postCheckoutSessionsConfirm(sessionId, idempotencyKey);
   }
 
   if (typeof window !== "undefined") {
@@ -78,6 +63,5 @@ export async function confirmMock(externalId: string, providerPaymentId?: string
   }
 }
 
-export const checkoutService = { createCheckout, confirmMock, safeRandomUUID };
-
+export const checkoutService = { createCheckout, placeOrder, safeRandomUUID };
 export default checkoutService;
