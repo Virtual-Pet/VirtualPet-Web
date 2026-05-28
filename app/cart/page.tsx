@@ -56,7 +56,7 @@ export default function CartPage() {
             <li key={item.variantId} className="flex gap-4 rounded-xl border bg-white p-4">
               {item.imageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.imageUrl} alt="" className="h-20 w-20 rounded-lg object-cover" />
+                <img src={`${process.env.NEXT_PUBLIC_S3_BASE_URL}${item.imageUrl}`} alt="" className="h-20 w-20 rounded-lg object-cover" />
               )}
               <section className="flex-1">
                 <p className="font-semibold">{item.productName}</p>
