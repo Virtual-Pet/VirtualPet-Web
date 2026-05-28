@@ -58,8 +58,8 @@ export default async function ProductPage({ params }: Props) {
             <h2 className="text-sm font-semibold text-zinc-900">Variantes disponibles</h2>
             {skus.map((v) => (
               <div key={v.skuId} className="rounded-xl border border-[var(--vp-border)] bg-white p-4">
-                <p className="font-mono text-xs text-zinc-400">{v.skuId}</p>
                 <p className="mt-1 text-sm text-zinc-600">
+
                   {v.attributes ? Object.entries(v.attributes).map(([k, val]) => `${k}: ${val}`).join(" · ") : ""}
                 </p>
                 <p className="mt-2 text-xl font-bold text-[var(--vp-primary-dark)]">{formatPrice(Number(v.price) ?? 0)}</p>
