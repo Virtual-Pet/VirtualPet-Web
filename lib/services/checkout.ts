@@ -69,14 +69,25 @@ export async function confirmMock(externalId: string, providerPaymentId?: string
   if (token) {
     if (providerPaymentId) {
       try {
-        // 1. Tell fake provider the payment was successful (if exists)
-        await PaymentsService.postFakeProviderPayments(providerPaymentId, 'approve');
+        // Approve the payment via the webhook endpoint (always available in all profiles).
+        // This is safer than /fake-provider/payments which is @Profile("!prod") and loses
+        // its in-memory state on Docker restarts.
+        await PaymentsService.postPaymentsWebhook('fake', {
+          providerPaymentId,
+          status: 'PAID',
+        });
       } catch (e) {
-        console.warn("Could not approve fake payment provider: ", e);
+        console.warn("Could not send payment webhook, falling back to fake-provider: ", e);
+        // Fallback: try the fake-provider endpoint (works in dev profile)
+        try {
+          await PaymentsService.postFakeProviderPayments(providerPaymentId, 'approve');
+        } catch (e2) {
+          console.warn("Could not approve via fake-provider either: ", e2);
+        }
       }
     }
-    
-    // 2. Confirm the checkout session to create the order (always)
+
+    // Confirm the checkout session → creates the order (always runs)
     const idempotencyKey = safeRandomUUID();
     await CheckoutService.postCheckoutSessionsConfirm(externalId, idempotencyKey);
   }
