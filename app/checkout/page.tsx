@@ -64,7 +64,15 @@ export default function CheckoutPage() {
       );
 
       if (res.paymentUrl.includes("/checkout/mock")) {
-        router.push(res.paymentUrl.replace("http://localhost:3000", ""));
+        // Strip the host regardless of environment (localhost, IP, domain)
+        // so Next.js router always gets a relative path like /checkout/mock?...
+        try {
+          const url = new URL(res.paymentUrl);
+          router.push(url.pathname + url.search);
+        } catch {
+          // paymentUrl is already relative
+          router.push(res.paymentUrl);
+        }
       } else {
         window.location.href = res.paymentUrl;
       }
