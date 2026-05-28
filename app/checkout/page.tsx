@@ -60,7 +60,7 @@ export default function CheckoutPage() {
         token,
         addressPayload,
         getCartSession(),
-        crypto.randomUUID()
+        checkoutService.safeRandomUUID()
       );
 
       if (res.paymentUrl.includes("/checkout/mock")) {
