@@ -21,6 +21,7 @@ function LoginForm() {
       const token = res.accessToken;
       if (token) {
         saveAuth(token, res.user as any);
+        window.dispatchEvent(new Event("cart_updated"));
         window.location.href = params.get("redirect") ?? "/";
       }
     } catch (e: unknown) {

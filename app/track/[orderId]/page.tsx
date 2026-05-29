@@ -1,34 +1,73 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { formatPrice } from "@/lib/api";
 import { Badge } from "@/components/Badge";
-import ordersService from "@/lib/services/orders";
-import { getToken } from "@/lib/auth";
+import { OpenAPI } from "@/lib/api-client";
 import type { Order } from "@/lib/types";
 
-export default function OrderDetailPage() {
-  const { id } = useParams<{ id: string }>();
-  const router = useRouter();
+function TrackingContent() {
+  const { orderId } = useParams<{ orderId: string }>();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token") ?? "";
+
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const token = getToken();
     if (!token) {
-      router.push("/login?redirect=/account/orders");
+      setError("Link de seguimiento inválido.");
+      setLoading(false);
       return;
     }
+
     const fetchOrder = () =>
-      ordersService.getOrder(id, token).then(setOrder).catch(() => setError("No se pudo cargar el pedido."));
+      fetch(`${OpenAPI.BASE}/orders/${orderId}/track?token=${encodeURIComponent(token)}`)
+        .then(async (res) => {
+          if (!res.ok) throw new Error("No se pudo cargar el pedido.");
+          const data = await res.json();
+          const o = data as {
+            orderId?: string;
+            status?: string;
+            shipment?: { status?: string };
+            totals?: { grandTotal?: string; shipping?: string };
+            shippingAddress?: { addressLine?: string; city?: string; postalCode?: string };
+            lineItems?: Array<{ skuId?: string; productName?: string; sku?: string; quantity?: number; unitPrice?: string; subtotal?: string }>;
+            createdAt?: string;
+          };
+          setOrder({
+            id: o.orderId ?? "",
+            status: o.shipment?.status ?? o.status ?? "CONFIRMED",
+            total: o.totals?.grandTotal ? Number(o.totals.grandTotal) : 0,
+            shippingCost: o.totals?.shipping ? Number(o.totals.shipping) : 0,
+            createdAt: o.createdAt ?? "",
+            shippingAddress: o.shippingAddress
+              ? {
+                  street: o.shippingAddress.addressLine ?? "",
+                  num: "",
+                  city: o.shippingAddress.city ?? "",
+                  zipCode: o.shippingAddress.postalCode ?? "",
+                }
+              : undefined,
+            items: (o.lineItems ?? []).map((item) => ({
+              variantId: item.skuId ?? "",
+              productName: item.productName ?? `SKU ${(item.skuId ?? "").slice(0, 8).toUpperCase()}`,
+              sku: item.sku ?? item.skuId ?? "",
+              quantity: item.quantity ?? 0,
+              unitPrice: item.unitPrice ? Number(item.unitPrice) : 0,
+              subtotal: item.subtotal ? Number(item.subtotal) : 0,
+            })),
+          });
+        })
+        .catch(() => setError("No se pudo cargar el pedido. Verificá que el link sea correcto."));
 
     fetchOrder().finally(() => setLoading(false));
     const interval = setInterval(fetchOrder, 30_000);
     return () => clearInterval(interval);
-  }, [id, router]);
+  }, [orderId, token]);
 
   if (loading) {
     return (
@@ -49,8 +88,8 @@ export default function OrderDetailPage() {
     return (
       <section className="mx-auto max-w-2xl px-4 py-10 text-center">
         <p className="text-[var(--vp-muted)]">{error || "Pedido no encontrado."}</p>
-        <Link href="/account/orders" className="mt-4 inline-block font-semibold text-[var(--vp-primary)] hover:underline">
-          ← Volver a mis pedidos
+        <Link href="/catalog" className="mt-4 inline-block font-semibold text-[var(--vp-primary)] hover:underline">
+          ← Ir al catálogo
         </Link>
       </section>
     );
@@ -58,12 +97,9 @@ export default function OrderDetailPage() {
 
   return (
     <section className="mx-auto max-w-2xl px-4 py-10">
-      <Link
-        href="/account/orders"
-        className="inline-flex items-center gap-1.5 text-sm text-[var(--vp-muted)] hover:text-[var(--vp-primary)] mb-6"
-      >
-        ← Mis pedidos
-      </Link>
+      <p className="mb-6 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+        Seguimiento de pedido
+      </p>
 
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -154,5 +190,13 @@ export default function OrderDetailPage() {
         )}
       </div>
     </section>
+  );
+}
+
+export default function TrackOrderPage() {
+  return (
+    <Suspense>
+      <TrackingContent />
+    </Suspense>
   );
 }

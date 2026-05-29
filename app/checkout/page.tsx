@@ -4,12 +4,18 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import checkoutService from "@/lib/services/checkout";
 import { getToken, getUser } from "@/lib/auth";
-import { getCartSession } from "@/lib/cart-session";
+import { getCart } from "@/lib/services/cart";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
+
+  // Guest Info State
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
 
   // Shipping Address Form State
   const [addressLine, setAddressLine] = useState("");
@@ -21,26 +27,20 @@ export default function CheckoutPage() {
   // Payment Method State
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer" | "mobbex">("cash");
 
-  // Pre-fill address if saved in user session
   useEffect(() => {
     const token = getToken();
     if (!token) {
-      router.push("/login?redirect=/checkout");
+      setIsGuest(true);
       return;
     }
     const user = getUser();
     if (user?.address) {
       setAddressLine(user.address);
     }
-  }, [router]);
+  }, []);
 
   async function handleCheckout(e: React.FormEvent) {
     e.preventDefault();
-    const token = getToken();
-    if (!token) {
-      router.push("/login?redirect=/checkout");
-      return;
-    }
 
     if (!addressLine.trim()) {
       setError("Por favor ingresá una dirección de entrega válida.");
@@ -50,27 +50,28 @@ export default function CheckoutPage() {
     setLoading(true);
     setError("");
 
+    const addressPayload = { addressLine, city, state, country, postalCode };
+
     try {
-      const addressPayload = {
-        addressLine,
-        city,
-        state,
-        country,
-        postalCode,
-      };
-
-      // 1. Create session and set address
-      const res = await checkoutService.createCheckout(
-        token,
-        addressPayload
-      );
-
-      // 2. Place the order directly (no upfront payment logic)
-      await checkoutService.placeOrder(res.checkoutSessionId);
-
-      // 3. Redirect to orders
-      router.push("/account/orders");
-      
+      if (isGuest) {
+        const cart = await getCart();
+        if (cart.items.length === 0) {
+          setError("El carrito está vacío.");
+          return;
+        }
+        const lineItems = cart.items.map((i) => ({ skuId: i.variantId, quantity: i.quantity }));
+        const confirmation = await checkoutService.createGuestCheckout(
+          { firstName, lastName, email },
+          addressPayload,
+          lineItems
+        );
+        router.push(`/checkout/success?orderId=${confirmation.orderId}&token=${confirmation.trackingToken}`);
+      } else {
+        const token = getToken()!;
+        const res = await checkoutService.createCheckout(token, addressPayload);
+        await checkoutService.placeOrder(res.checkoutSessionId);
+        router.push("/account/orders");
+      }
     } catch (e: unknown) {
       const err = e as { message?: string };
       setError(err.message ?? "Error al procesar el checkout");
@@ -92,6 +93,53 @@ export default function CheckoutPage() {
         )}
 
         <form onSubmit={handleCheckout} className="mt-8 space-y-8">
+          {isGuest && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-bold text-zinc-800 border-b pb-2">Tus datos</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500">Nombre</label>
+                  <input
+                    type="text"
+                    placeholder="Juan"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-[var(--vp-border)] px-4 py-2 text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[var(--vp-primary)]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500">Apellido</label>
+                  <input
+                    type="text"
+                    placeholder="García"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-[var(--vp-border)] px-4 py-2 text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[var(--vp-primary)]"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500">Email</label>
+                <input
+                  type="email"
+                  placeholder="juan@ejemplo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-[var(--vp-border)] px-4 py-2 text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[var(--vp-primary)]"
+                  required
+                />
+              </div>
+              <p className="text-xs text-zinc-400">
+                ¿Ya tenés cuenta?{" "}
+                <a href="/login?redirect=/checkout" className="text-emerald-600 font-semibold hover:underline">
+                  Iniciá sesión
+                </a>
+              </p>
+            </div>
+          )}
+
           <div className="space-y-4">
             <h2 className="text-lg font-bold text-zinc-800 border-b pb-2">Dirección de Entrega</h2>
             

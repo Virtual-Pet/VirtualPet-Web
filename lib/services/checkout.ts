@@ -59,9 +59,38 @@ export async function placeOrder(sessionId: string): Promise<void> {
   }
 
   if (typeof window !== "undefined") {
-    localStorage.removeItem("vp_mock_cart");
+    window.dispatchEvent(new Event("cart_updated"));
   }
 }
 
-export const checkoutService = { createCheckout, placeOrder, safeRandomUUID };
+export async function createGuestCheckout(
+  guest: { firstName: string; lastName: string; email: string },
+  shippingAddress: {
+    addressLine: string;
+    city: string;
+    state?: string;
+    country?: string;
+    postalCode: string;
+  },
+  lineItems: Array<{ skuId: string; quantity: number }>
+): Promise<{ orderId: string; shipmentId: string; trackingToken: string }> {
+  if (lineItems.length === 0) {
+    throw new Error("El carrito está vacío");
+  }
+
+  const res = await fetch(`${OpenAPI.BASE}/checkout/guest`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ guest, lineItems, shippingAddress }),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { detail?: string }).detail ?? "Error al procesar el pedido");
+  }
+
+  return res.json();
+}
+
+export const checkoutService = { createCheckout, placeOrder, safeRandomUUID, createGuestCheckout };
 export default checkoutService;

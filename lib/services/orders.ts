@@ -1,4 +1,4 @@
-import { OrdersService, OpenAPI } from "@/lib/api-client";
+import { OrdersService, ShipmentsService, OpenAPI } from "@/lib/api-client";
 import type { Order } from "@/lib/types";
 
 const useMock = ["1", "true"].includes(process.env.NEXT_PUBLIC_USE_MOCK_SERVICES ?? "");
@@ -20,18 +20,27 @@ function readOrders(): Order[] {
 
 export async function listOrders(token?: string): Promise<Order[]> {
   if (useMock) return Promise.resolve(readOrders());
-  
+
   if (token) OpenAPI.TOKEN = token;
-  const response = await OrdersService.getOrders();
-  const data = response.data || [];
-  
-  return data.map((o) => ({
-    id: o.orderId || "",
-    status: o.status || "PENDING_PAYMENT",
-    total: o.total ? Number(o.total) : 0,
-    createdAt: o.createdAt || "",
-    items: [],
-  }));
+  const [ordersResp, shipmentsResp] = await Promise.all([
+    OrdersService.getOrders(),
+    ShipmentsService.getShipments("me"),
+  ]);
+  const orders = ordersResp.data || [];
+  const shipments = shipmentsResp.data || [];
+
+  const shipmentByOrderId = new Map(shipments.map((s) => [s.orderId, s]));
+
+  return orders.map((o) => {
+    const shipment = shipmentByOrderId.get(o.orderId);
+    return {
+      id: o.orderId || "",
+      status: shipment?.status || o.status || "CONFIRMED",
+      total: o.total ? Number(o.total) : 0,
+      createdAt: o.createdAt || "",
+      items: [],
+    };
+  });
 }
 
 export async function getOrder(id: string, token?: string): Promise<Order> {
@@ -46,7 +55,7 @@ export async function getOrder(id: string, token?: string): Promise<Order> {
   
   return {
     id: o.orderId || "",
-    status: o.status || "PENDING_PAYMENT",
+    status: o.shipment?.status || o.status || "CONFIRMED",
     total: o.totals?.grandTotal ? Number(o.totals.grandTotal) : 0,
     shippingCost: o.totals?.shipping ? Number(o.totals.shipping) : 0,
     createdAt: o.createdAt || "",
@@ -58,8 +67,8 @@ export async function getOrder(id: string, token?: string): Promise<Order> {
     } : undefined,
     items: (o.lineItems || []).map((item) => ({
       variantId: item.skuId || "",
-      productName: `Producto #${(item.skuId || "").slice(0, 8)}`,
-      sku: item.skuId || "",
+      productName: (item as unknown as { productName?: string }).productName || `SKU ${(item.skuId || "").slice(0, 8).toUpperCase()}`,
+      sku: (item as unknown as { sku?: string }).sku || item.skuId || "",
       quantity: item.quantity || 0,
       unitPrice: item.unitPrice ? Number(item.unitPrice) : 0,
       subtotal: item.subtotal ? Number(item.subtotal) : 0,

@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import { getToken } from "@/lib/auth";
-import { CartService } from "@/lib/api-client";
+import { getCartSession } from "@/lib/cart-session";
 
 export type CartItem = {
   variantId: string;
@@ -19,32 +19,58 @@ export type Cart = {
   itemCount: number;
 };
 
-const CART_KEY = "vp_mock_cart";
+type BackendCartItem = {
+  skuId: string;
+  sku: string;
+  productId: string;
+  productName: string;
+  brand: string;
+  attributes: Record<string, string>;
+  imageUrl: string | null;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  available: boolean;
+};
 
-function loadLocalCart(): Cart {
-  if (typeof window === "undefined") return { items: [], subtotal: 0, itemCount: 0 };
-  const raw = localStorage.getItem(CART_KEY);
-  if (!raw) return { items: [], subtotal: 0, itemCount: 0 };
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return { items: [], subtotal: 0, itemCount: 0 };
-  }
+type BackendCart = {
+  items: BackendCartItem[];
+  totals: { items: number; shipping: number; grandTotal: number };
+  currency: string;
+};
+
+function toCart(backend: BackendCart): Cart {
+  const items: CartItem[] = backend.items.map((i) => ({
+    variantId: i.skuId,
+    productName: i.productName,
+    sku: i.sku,
+    attributes: i.attributes ?? {},
+    quantity: i.quantity,
+    unitPrice: i.unitPrice,
+    lineTotal: i.subtotal,
+    imageUrl: i.imageUrl,
+  }));
+  const subtotal = backend.totals.grandTotal;
+  const itemCount = items.reduce((acc, i) => acc + i.quantity, 0);
+  return { items, subtotal, itemCount };
 }
 
-function saveLocalCart(cart: Cart) {
+function emitCartUpdated() {
   if (typeof window !== "undefined") {
-    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    window.dispatchEvent(new Event("cart_updated"));
   }
-}
-
-function recalculateTotals(cart: Cart) {
-  cart.subtotal = cart.items.reduce((acc, item) => acc + item.lineTotal, 0);
-  cart.itemCount = cart.items.reduce((acc, item) => acc + item.quantity, 0);
 }
 
 export async function getCart(): Promise<Cart> {
-  return loadLocalCart();
+  const token = getToken();
+  if (token) {
+    const backend = await api<BackendCart>("/cart", { token });
+    return toCart(backend);
+  }
+  const sessionId = getCartSession();
+  if (!sessionId) return { items: [], subtotal: 0, itemCount: 0 };
+  const backend = await api<BackendCart>(`/cart/session/${sessionId}`);
+  return toCart(backend);
 }
 
 export type AddItemPayload = {
@@ -57,67 +83,71 @@ export type AddItemPayload = {
 };
 
 export async function addItem(item: AddItemPayload, quantity = 1): Promise<Cart> {
-  const cart = loadLocalCart();
-  const existing = cart.items.find((i) => i.variantId === item.variantId);
-  const newTotalQuantity = (existing?.quantity || 0) + quantity;
-
   const token = getToken();
-  if (token) {
-    try {
-      await CartService.putCartItems(item.variantId, { quantity: newTotalQuantity });
-    } catch (e) {
-      console.error("Failed to sync cart item to backend", e);
-      throw new Error("No se pudo agregar al carrito en el servidor");
-    }
-  }
 
-  if (existing) {
-    existing.quantity = newTotalQuantity;
-    existing.lineTotal = existing.quantity * existing.unitPrice;
+  const cart = await getCart();
+  const existing = cart.items.find((i) => i.variantId === item.variantId);
+  const newTotalQuantity = (existing?.quantity ?? 0) + quantity;
+
+  if (token) {
+    await api(`/cart/items/${item.variantId}`, {
+      method: "PUT",
+      token,
+      body: JSON.stringify({ quantity: newTotalQuantity }),
+    });
   } else {
-    cart.items.push({
-      variantId: item.variantId,
-      productName: item.productName,
-      sku: item.sku,
-      attributes: item.attributes,
-      quantity: newTotalQuantity,
-      unitPrice: item.unitPrice,
-      lineTotal: item.unitPrice * newTotalQuantity,
-      imageUrl: item.imageUrl ?? null,
+    const sessionId = getCartSession();
+    await api(`/cart/session/${sessionId}/items/${item.variantId}`, {
+      method: "PUT",
+      body: JSON.stringify({ quantity: newTotalQuantity }),
     });
   }
-  
-  recalculateTotals(cart);
-  saveLocalCart(cart);
-  
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event("cart_updated"));
-  }
-  
-  return cart;
+
+  const updated = await getCart();
+  emitCartUpdated();
+  return updated;
 }
 
 export async function removeItem(variantId: string): Promise<Cart> {
   const token = getToken();
+
   if (token) {
-    try {
-      await CartService.deleteCartItems(variantId);
-    } catch (e) {
-      console.error("Failed to remove cart item from backend", e);
-    }
+    await api(`/cart/items/${variantId}`, { method: "DELETE", token });
+  } else {
+    const sessionId = getCartSession();
+    await api(`/cart/session/${sessionId}/items/${variantId}`, { method: "DELETE" });
   }
 
-  const cart = loadLocalCart();
-  cart.items = cart.items.filter((i) => i.variantId !== variantId);
-  recalculateTotals(cart);
-  saveLocalCart(cart);
-  
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event("cart_updated"));
-  }
-  
-  return cart;
+  const updated = await getCart();
+  emitCartUpdated();
+  return updated;
 }
 
-export const cartService = { getCart, addItem, removeItem };
+export async function updateQuantity(variantId: string, newQuantity: number): Promise<Cart> {
+  if (newQuantity <= 0) {
+    return removeItem(variantId);
+  }
+
+  const token = getToken();
+
+  if (token) {
+    await api(`/cart/items/${variantId}`, {
+      method: "PUT",
+      token,
+      body: JSON.stringify({ quantity: newQuantity }),
+    });
+  } else {
+    const sessionId = getCartSession();
+    await api(`/cart/session/${sessionId}/items/${variantId}`, {
+      method: "PUT",
+      body: JSON.stringify({ quantity: newQuantity }),
+    });
+  }
+
+  const updated = await getCart();
+  emitCartUpdated();
+  return updated;
+}
+
+export const cartService = { getCart, addItem, removeItem, updateQuantity };
 export default cartService;

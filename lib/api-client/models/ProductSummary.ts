@@ -12,5 +12,6 @@ export type ProductSummary = {
     petType?: string;
     basePrice?: Money;
     thumbnail?: string;
+    skuCount?: number;
 };
 
