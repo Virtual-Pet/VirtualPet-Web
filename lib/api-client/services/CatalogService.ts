@@ -2,6 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { CatalogFacets } from '../models/CatalogFacets';
+import type { Category } from '../models/Category';
 import type { CursorPage } from '../models/CursorPage';
 import type { Product } from '../models/Product';
 import type { ProductSummary } from '../models/ProductSummary';
@@ -57,6 +59,19 @@ export class CatalogService {
         });
     }
     /**
+     * Facetas del catálogo
+     * Listas auxiliares para los filtros del marketplace: tipos de mascota, categorías y marcas. Endpoint público, sin paginación.
+     *
+     * @returns CatalogFacets Facetas disponibles
+     * @throws ApiError
+     */
+    public static getProductsFacets(): CancelablePromise<CatalogFacets> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/products/facets',
+        });
+    }
+    /**
      * Detalle de producto
      * Incluye todas las variantes (SKUs) embebidas. Cacheable (ETag).
      * @param id
@@ -81,6 +96,18 @@ export class CatalogService {
                 304: `No modificado`,
                 404: `Recurso inexistente`,
             },
+        });
+    }
+    /**
+     * Listar categorías
+     * Listado plano de categorías para navegación. Público.
+     * @returns Category Categorías
+     * @throws ApiError
+     */
+    public static getCategories(): CancelablePromise<Array<Category>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/categories',
         });
     }
 }

@@ -11,8 +11,11 @@ import { request as __request } from '../core/request';
 export class AuthService {
     /**
      * Login
-     * Autentica con email y contraseña y devuelve los tokens. No crea carrito (creación lazy).
+     * Autentica con email y contraseña y devuelve los tokens. Si la petición incluye la cookie CART_SESSION, el carrito anónimo se fusiona con el carrito del usuario (sumando cantidades de SKUs duplicados), se elimina el carrito anónimo y la cookie se borra (Set-Cookie con Max-Age=0). No crea carrito de usuario salvo que haya items que fusionar (creación lazy).
+     *
      * @param requestBody
+     * @param cartSession Id de sesión del carrito anónimo. La cookie lleva únicamente el id; el contenido del carrito vive en Redis (cart:anon:{id}), nunca en la cookie. Se emite en la primera mutación anónima y el navegador la reenvía automáticamente.
+     *
      * @returns AuthTokens Autenticado
      * @throws ApiError
      */
@@ -21,10 +24,14 @@ export class AuthService {
             email: string;
             password: string;
         },
+        cartSession?: string,
     ): CancelablePromise<AuthTokens> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/auth/login',
+            cookies: {
+                'CART_SESSION': cartSession,
+            },
             body: requestBody,
             mediaType: 'application/json',
             errors: {

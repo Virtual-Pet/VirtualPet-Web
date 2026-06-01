@@ -6,5 +6,9 @@ export type OrderConfirmation = {
     orderId?: string;
     shipmentId?: string;
     status?: string;
+    /**
+     * Token de seguimiento opaco. Solo presente en pedidos guest (POST /checkout/guest).
+     */
+    trackingToken?: string;
 };
 

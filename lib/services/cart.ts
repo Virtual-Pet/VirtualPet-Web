@@ -1,6 +1,5 @@
-import { api } from "@/lib/api";
-import { getToken } from "@/lib/auth";
-import { getCartSession } from "@/lib/cart-session";
+import { CartService } from "@/lib/api-client";
+import type { Cart as ApiCart } from "@/lib/api-client";
 
 export type CartItem = {
   variantId: string;
@@ -19,38 +18,18 @@ export type Cart = {
   itemCount: number;
 };
 
-type BackendCartItem = {
-  skuId: string;
-  sku: string;
-  productId: string;
-  productName: string;
-  brand: string;
-  attributes: Record<string, string>;
-  imageUrl: string | null;
-  quantity: number;
-  unitPrice: number;
-  subtotal: number;
-  available: boolean;
-};
-
-type BackendCart = {
-  items: BackendCartItem[];
-  totals: { items: number; shipping: number; grandTotal: number };
-  currency: string;
-};
-
-function toCart(backend: BackendCart): Cart {
-  const items: CartItem[] = backend.items.map((i) => ({
-    variantId: i.skuId,
-    productName: i.productName,
-    sku: i.sku,
+function toCart(backend: ApiCart): Cart {
+  const items: CartItem[] = (backend.items ?? []).map((i) => ({
+    variantId: i.skuId ?? "",
+    productName: i.productName ?? "",
+    sku: i.sku ?? "",
     attributes: i.attributes ?? {},
-    quantity: i.quantity,
-    unitPrice: i.unitPrice,
-    lineTotal: i.subtotal,
-    imageUrl: i.imageUrl,
+    quantity: i.quantity ?? 0,
+    unitPrice: i.unitPrice ? Number(i.unitPrice) : 0,
+    lineTotal: i.subtotal ? Number(i.subtotal) : 0,
+    imageUrl: i.imageUrl ?? null,
   }));
-  const subtotal = backend.totals.grandTotal;
+  const subtotal = backend.totals?.grandTotal ? Number(backend.totals.grandTotal) : 0;
   const itemCount = items.reduce((acc, i) => acc + i.quantity, 0);
   return { items, subtotal, itemCount };
 }
@@ -61,15 +40,11 @@ function emitCartUpdated() {
   }
 }
 
+// The cart is resolved per request: the bearer token (injected by the API client) identifies
+// an authenticated user's cart, and otherwise the backend-set HttpOnly CART_SESSION cookie
+// (carried via credentials: "include") identifies the anonymous cart. No client-side session id.
 export async function getCart(): Promise<Cart> {
-  const token = getToken();
-  if (token) {
-    const backend = await api<BackendCart>("/cart", { token });
-    return toCart(backend);
-  }
-  const sessionId = getCartSession();
-  if (!sessionId) return { items: [], subtotal: 0, itemCount: 0 };
-  const backend = await api<BackendCart>(`/cart/session/${sessionId}`);
+  const backend = await CartService.getCart();
   return toCart(backend);
 }
 
@@ -83,25 +58,11 @@ export type AddItemPayload = {
 };
 
 export async function addItem(item: AddItemPayload, quantity = 1): Promise<Cart> {
-  const token = getToken();
-
   const cart = await getCart();
   const existing = cart.items.find((i) => i.variantId === item.variantId);
   const newTotalQuantity = (existing?.quantity ?? 0) + quantity;
 
-  if (token) {
-    await api(`/cart/items/${item.variantId}`, {
-      method: "PUT",
-      token,
-      body: JSON.stringify({ quantity: newTotalQuantity }),
-    });
-  } else {
-    const sessionId = getCartSession();
-    await api(`/cart/session/${sessionId}/items/${item.variantId}`, {
-      method: "PUT",
-      body: JSON.stringify({ quantity: newTotalQuantity }),
-    });
-  }
+  await CartService.putCartItems(item.variantId, { quantity: newTotalQuantity });
 
   const updated = await getCart();
   emitCartUpdated();
@@ -109,14 +70,7 @@ export async function addItem(item: AddItemPayload, quantity = 1): Promise<Cart>
 }
 
 export async function removeItem(variantId: string): Promise<Cart> {
-  const token = getToken();
-
-  if (token) {
-    await api(`/cart/items/${variantId}`, { method: "DELETE", token });
-  } else {
-    const sessionId = getCartSession();
-    await api(`/cart/session/${sessionId}/items/${variantId}`, { method: "DELETE" });
-  }
+  await CartService.deleteCartItems(variantId);
 
   const updated = await getCart();
   emitCartUpdated();
@@ -128,21 +82,7 @@ export async function updateQuantity(variantId: string, newQuantity: number): Pr
     return removeItem(variantId);
   }
 
-  const token = getToken();
-
-  if (token) {
-    await api(`/cart/items/${variantId}`, {
-      method: "PUT",
-      token,
-      body: JSON.stringify({ quantity: newQuantity }),
-    });
-  } else {
-    const sessionId = getCartSession();
-    await api(`/cart/session/${sessionId}/items/${variantId}`, {
-      method: "PUT",
-      body: JSON.stringify({ quantity: newQuantity }),
-    });
-  }
+  await CartService.putCartItems(variantId, { quantity: newQuantity });
 
   const updated = await getCart();
   emitCartUpdated();

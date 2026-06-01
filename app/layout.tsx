@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
+import { ApiClientInit } from "@/components/ApiClientInit";
 import { setupApiClient } from "@/lib/api-client/setup";
 import "./globals.css";
 
+// Configure the server-side copy of the generated client (for RSC/SSR fetches).
+// ApiClientInit does the same for the browser copy — both are required.
 setupApiClient();
 
 export const metadata: Metadata = {
@@ -14,6 +17,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="es" className="h-full">
       <body className="flex min-h-full flex-col bg-[var(--background)] text-[var(--foreground)]">
+        <ApiClientInit />
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <footer className="mt-auto border-t border-[var(--vp-border)] bg-white py-10">

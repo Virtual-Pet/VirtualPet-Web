@@ -3,17 +3,17 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { Address } from './Address';
-import type { CartItem } from './CartItem';
 import type { Currency } from './Currency';
+import type { OrderLineItem } from './OrderLineItem';
 import type { OrderStatus } from './OrderStatus';
+import type { OrderTotals } from './OrderTotals';
 import type { ShipmentStatus } from './ShipmentStatus';
-import type { Totals } from './Totals';
 export type Order = {
     orderId?: string;
     customerId?: string;
     status?: OrderStatus;
-    lineItems?: Array<CartItem>;
-    totals?: Totals;
+    lineItems?: Array<OrderLineItem>;
+    totals?: OrderTotals;
     currency?: Currency;
     shippingAddress?: Address;
     shipment?: {

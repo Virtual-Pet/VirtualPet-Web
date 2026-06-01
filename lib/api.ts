@@ -4,15 +4,21 @@ export type ApiError = { message: string; status: number };
 
 export async function api<T>(
   path: string,
-  options: RequestInit & { token?: string; cartSession?: string } = {}
+  options: RequestInit & { token?: string } = {}
 ): Promise<T> {
-  const { token, cartSession, ...fetchOptions } = options;
+  const { token, ...fetchOptions } = options;
   const headers = new Headers(fetchOptions.headers);
   if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  if (cartSession) headers.set("X-Cart-Session", cartSession);
 
-  const res = await fetch(`${API_URL}${path}`, { ...fetchOptions, headers, cache: "no-store" });
+  // credentials: "include" carries the backend-set HttpOnly CART_SESSION cookie so anonymous
+  // carts resolve per the spec, and lets the backend merge/clear it on login.
+  const res = await fetch(`${API_URL}${path}`, {
+    ...fetchOptions,
+    headers,
+    cache: "no-store",
+    credentials: "include",
+  });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw { message: body.message ?? res.statusText, status: res.status } as ApiError;

@@ -66,6 +66,34 @@ export class OrdersService {
         });
     }
     /**
+     * Seguimiento público de orden (guest)
+     * Devuelve el detalle completo de una orden sin requerir autenticación. Requiere el token de seguimiento generado al confirmar el pedido guest. El backend valida que el token corresponda al orderId; devuelve 403 si no coincide.
+     *
+     * @param id
+     * @param token Token de seguimiento incluido en la confirmación del pedido guest
+     * @returns Order Detalle de la orden
+     * @throws ApiError
+     */
+    public static getOrdersTrack(
+        id: string,
+        token: string,
+    ): CancelablePromise<Order> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/orders/{id}/track',
+            path: {
+                'id': id,
+            },
+            query: {
+                'token': token,
+            },
+            errors: {
+                403: `No autorizado (rol o propiedad)`,
+                404: `Recurso inexistente`,
+            },
+        });
+    }
+    /**
      * Cancelar orden (único punto de cancelación)
      * Orquesta en una transacción: orden→CANCELLED, shipment→CANCELLED, restitución de stock e inicio de reembolso (Payment→REFUNDED por webhook async). Único camino de cancelación, también para el backoffice. Solo si el envío está en CONFIRMED o PREPARED.
      *

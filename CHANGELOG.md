@@ -5,6 +5,23 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-06-01
+
+### Sincronización con la API de backend
+
+Alineación del frontend con la última versión del contrato OpenAPI (`docs/api/virtualpet-openapi.yaml`).
+
+- **Cliente tipado regenerado** desde el spec del repo (el script `api:generate` ahora apunta a `./docs/api/virtualpet-openapi.yaml`). Quedan disponibles nuevos modelos (`Category`, `CatalogFacets`, `CartItemQuantity`) y métodos: `getProductsFacets` (`GET /products/facets`), `getCategories` (`GET /categories`), `getOrdersTrack` (`GET /orders/{id}/track`) y `postCheckoutGuest` (`POST /checkout/guest`).
+- **Modelos enriquecidos**: `Sku` (`sku`, `stock`, `stockMin`, `imageUrl`, `active`, `createdAt`), `Product` (`brand`, `active`, `createdAt`), `CartItem` (`sku`, `productId`, `productName`, `brand`, `attributes`, `imageUrl`, `available`) y `ShipmentSummary` (`contactName`, `contactEmail`, `total`).
+- **Carrito anónimo migrado a cookie `CART_SESSION` (HttpOnly)** según el spec. Se usan los endpoints estándar `/cart` y `/cart/items/{skuId}` tanto para usuarios autenticados (token Bearer) como invitados (cookie), enviando credenciales (`credentials: "include"` / `OpenAPI.WITH_CREDENTIALS`). Se eliminó el header `X-Cart-Session`, las rutas no estándar `/cart/session/{id}` y el archivo `lib/cart-session.ts` (el id de sesión ahora lo gestiona el backend, ya no se genera un UUID en el cliente).
+- **Login** (`lib/services/auth.ts`): usa `AuthService.postAuthLogin`; el backend fusiona el carrito anónimo automáticamente desde la cookie `CART_SESSION` (ya no se envía `cartSessionId`).
+- **Guest checkout** (`lib/services/checkout.ts`): `createGuestCheckout` usa el método tipado `CheckoutService.postCheckoutGuest` en lugar de un `fetch` manual.
+- **Seguimiento de pedido** (`/track/[orderId]`): usa el método tipado `OrdersService.getOrdersTrack`.
+- **`ProductCard`**: se quitó el uso de `skuCount`, eliminado del modelo `ProductSummary` en el spec.
+- **Componente `ApiClientInit`**: inicializa el cliente API en el navegador (`OpenAPI.BASE` y credenciales). Antes `setupApiClient()` solo corría en el servidor (desde `layout.tsx`), por lo que las llamadas del lado del cliente usaban la URL de producción por defecto del cliente generado.
+
+---
+
 ## [Unreleased] — 2026-05-29
 
 ### Agregado

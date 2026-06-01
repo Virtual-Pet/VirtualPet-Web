@@ -6,12 +6,12 @@ import type { Money } from './Money';
 export type ProductSummary = {
     id?: string;
     name?: string;
+    description?: string | null;
+    brand?: string | null;
     category?: string;
-    description?: string;
-    brand?: string;
     petType?: string;
     basePrice?: Money;
-    thumbnail?: string;
-    skuCount?: number;
+    thumbnail?: string | null;
+    active?: boolean;
 };
 

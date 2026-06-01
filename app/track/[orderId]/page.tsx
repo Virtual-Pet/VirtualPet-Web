@@ -5,7 +5,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { formatPrice } from "@/lib/api";
 import { Badge } from "@/components/Badge";
-import { OpenAPI } from "@/lib/api-client";
+import { OrdersService } from "@/lib/api-client";
 import type { Order } from "@/lib/types";
 
 function TrackingContent() {
@@ -25,19 +25,8 @@ function TrackingContent() {
     }
 
     const fetchOrder = () =>
-      fetch(`${OpenAPI.BASE}/orders/${orderId}/track?token=${encodeURIComponent(token)}`)
-        .then(async (res) => {
-          if (!res.ok) throw new Error("No se pudo cargar el pedido.");
-          const data = await res.json();
-          const o = data as {
-            orderId?: string;
-            status?: string;
-            shipment?: { status?: string };
-            totals?: { grandTotal?: string; shipping?: string };
-            shippingAddress?: { addressLine?: string; city?: string; postalCode?: string };
-            lineItems?: Array<{ skuId?: string; productName?: string; sku?: string; quantity?: number; unitPrice?: string; subtotal?: string }>;
-            createdAt?: string;
-          };
+      OrdersService.getOrdersTrack(orderId, token)
+        .then((o) => {
           setOrder({
             id: o.orderId ?? "",
             status: o.shipment?.status ?? o.status ?? "CONFIRMED",
@@ -52,10 +41,11 @@ function TrackingContent() {
                   zipCode: o.shippingAddress.postalCode ?? "",
                 }
               : undefined,
+            // Order line items are price snapshots (skuId only); no product name is persisted.
             items: (o.lineItems ?? []).map((item) => ({
               variantId: item.skuId ?? "",
-              productName: item.productName ?? `SKU ${(item.skuId ?? "").slice(0, 8).toUpperCase()}`,
-              sku: item.sku ?? item.skuId ?? "",
+              productName: `SKU ${(item.skuId ?? "").slice(0, 8).toUpperCase()}`,
+              sku: item.skuId ?? "",
               quantity: item.quantity ?? 0,
               unitPrice: item.unitPrice ? Number(item.unitPrice) : 0,
               subtotal: item.subtotal ? Number(item.subtotal) : 0,

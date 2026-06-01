@@ -6,9 +6,12 @@ import type { Sku } from './Sku';
 export type Product = {
     id?: string;
     name?: string;
-    description?: string;
+    description?: string | null;
+    brand?: string | null;
     category?: string;
     petType?: string;
+    active?: boolean;
+    createdAt?: string;
     images?: Array<string>;
     skus?: Array<Sku>;
 };

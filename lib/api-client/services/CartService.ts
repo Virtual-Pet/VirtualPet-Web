@@ -11,24 +11,32 @@ import { request as __request } from '../core/request';
 export class CartService {
     /**
      * Obtener el carrito
-     * Devuelve el carrito del usuario. Si aún no existe (lazy), responde carrito vacío con 200.
+     * Devuelve el carrito. Si la petición está autenticada (Bearer token) se resuelve por usuario; en caso contrario se identifica por la cookie CART_SESSION (que lleva solo el id de sesión; el contenido vive en Redis). Sin usuario ni cookie responde un carrito vacío. Creación lazy: responde 200 aunque el carrito no exista.
+     *
+     * @param cartSession Id de sesión del carrito anónimo. La cookie lleva únicamente el id; el contenido del carrito vive en Redis (cart:anon:{id}), nunca en la cookie. Se emite en la primera mutación anónima y el navegador la reenvía automáticamente.
+     *
      * @returns Cart Carrito (vacío o con items)
      * @throws ApiError
      */
-    public static getCart(): CancelablePromise<Cart> {
+    public static getCart(
+        cartSession?: string,
+    ): CancelablePromise<Cart> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/cart',
-            errors: {
-                401: `No autenticado / credenciales inválidas`,
+            cookies: {
+                'CART_SESSION': cartSession,
             },
         });
     }
     /**
      * Fijar cantidad de un SKU (upsert)
-     * Fija la cantidad exacta. Dispara la creación lazy del carrito si no existe. Idempotente.
+     * Fija la cantidad exacta. Dispara la creación lazy del carrito si no existe. Idempotente. Si la petición es anónima y no trae la cookie CART_SESSION, se genera una sesión nueva y se devuelve en Set-Cookie (solo el id de sesión; el contenido vive en Redis); las peticiones siguientes la reenvían automáticamente.
+     *
      * @param skuId
      * @param requestBody
+     * @param cartSession Id de sesión del carrito anónimo. La cookie lleva únicamente el id; el contenido del carrito vive en Redis (cart:anon:{id}), nunca en la cookie. Se emite en la primera mutación anónima y el navegador la reenvía automáticamente.
+     *
      * @returns CartItemQuantity Item resultante
      * @throws ApiError
      */
@@ -37,12 +45,16 @@ export class CartService {
         requestBody: {
             quantity: number;
         },
+        cartSession?: string,
     ): CancelablePromise<CartItemQuantity> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/cart/items/{skuId}',
             path: {
                 'skuId': skuId,
+            },
+            cookies: {
+                'CART_SESSION': cartSession,
             },
             body: requestBody,
             mediaType: 'application/json',
@@ -54,19 +66,26 @@ export class CartService {
     }
     /**
      * Eliminar un SKU del carrito
-     * Elimina el producto por completo. Idempotente (éxito aunque no estuviera).
+     * Elimina el producto por completo. Idempotente (éxito aunque no estuviera). Las peticiones anónimas se identifican por la cookie CART_SESSION (solo el id de sesión; el contenido vive en Redis).
+     *
      * @param skuId
+     * @param cartSession Id de sesión del carrito anónimo. La cookie lleva únicamente el id; el contenido del carrito vive en Redis (cart:anon:{id}), nunca en la cookie. Se emite en la primera mutación anónima y el navegador la reenvía automáticamente.
+     *
      * @returns void
      * @throws ApiError
      */
     public static deleteCartItems(
         skuId: string,
+        cartSession?: string,
     ): CancelablePromise<void> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/cart/items/{skuId}',
             path: {
                 'skuId': skuId,
+            },
+            cookies: {
+                'CART_SESSION': cartSession,
             },
             errors: {
                 404: `Recurso inexistente`,
