@@ -78,18 +78,13 @@ export async function createGuestCheckout(
     throw new Error("El carrito está vacío");
   }
 
-  const res = await fetch(`${OpenAPI.BASE}/checkout/guest`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ guest, lineItems, shippingAddress }),
-  });
+  const confirmation = await CheckoutService.postCheckoutGuest({ guest, lineItems, shippingAddress });
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error((body as { detail?: string }).detail ?? "Error al procesar el pedido");
-  }
-
-  return res.json();
+  return {
+    orderId: confirmation.orderId ?? "",
+    shipmentId: confirmation.shipmentId ?? "",
+    trackingToken: confirmation.trackingToken ?? "",
+  };
 }
 
 export const checkoutService = { createCheckout, placeOrder, safeRandomUUID, createGuestCheckout };

@@ -3,17 +3,13 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { Money } from './Money';
-export type CartItem = {
+/**
+ * Línea persistida en la orden (snapshot de precio al momento de confirmar).
+ */
+export type OrderLineItem = {
     skuId?: string;
-    sku?: string | null;
-    productId?: string | null;
-    productName?: string | null;
-    brand?: string | null;
-    attributes?: Record<string, string>;
-    imageUrl?: string | null;
     quantity?: number;
     unitPrice?: Money;
     subtotal?: Money;
-    available?: boolean;
 };
 

@@ -133,4 +133,38 @@ export class CheckoutService {
             },
         });
     }
+    /**
+     * Checkout como invitado (sin cuenta)
+     * Flujo atómico de un paso para clientes sin cuenta: valida stock, crea la orden, genera el shipment y devuelve un token de seguimiento de un solo uso. No requiere autenticación. El token permite consultar el estado del pedido vía GET /orders/{id}/track.
+     *
+     * @param requestBody
+     * @returns OrderConfirmation Orden guest confirmada
+     * @throws ApiError
+     */
+    public static postCheckoutGuest(
+        requestBody: {
+            guest: {
+                firstName: string;
+                lastName: string;
+                email: string;
+            };
+            lineItems: Array<{
+                skuId: string;
+                quantity: number;
+            }>;
+            shippingAddress: Address;
+        },
+    ): CancelablePromise<OrderConfirmation> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/checkout/guest',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Solicitud inválida`,
+                409: `Conflicto de estado (stock, estado de sesión/envío, duplicado, no cancelable)`,
+                422: `Error de validación del payload`,
+            },
+        });
+    }
 }

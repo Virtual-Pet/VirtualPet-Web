@@ -6,8 +6,6 @@ import { ProductSummary } from "@/lib/api-client";
 import { ProductCardActions } from "@/components/ProductCardActions";
 
 export function ProductCard({ product }: { product: ProductSummary }) {
-  const hasVariants = (product.skuCount ?? 0) > 1;
-
   return (
     <div
       className="group flex flex-col overflow-hidden rounded-2xl border border-[var(--vp-border)] bg-white transition-shadow"
@@ -35,7 +33,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
           <h3 className="font-semibold text-zinc-900">{product.name}</h3>
           <p className="line-clamp-2 text-sm text-[var(--vp-muted)]">{product.description}</p>
           <p className="mt-auto pt-2 text-lg font-bold text-[var(--vp-primary-dark)]">
-            {hasVariants ? "desde " : ""}{formatPrice(Number(product.basePrice ?? "0"))}
+            {formatPrice(Number(product.basePrice ?? "0"))}
           </p>
         </div>
       </Link>

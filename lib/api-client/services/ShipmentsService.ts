@@ -65,7 +65,7 @@ export class ShipmentsService {
         });
     }
     /**
-     * Avanzar estado del envío (EMPLOYEE)
+     * Avanzar estado del envío (EMPLOYEE / ADMIN)
      * Avanza por los estados de progreso (CONFIRMED→PREPARED→IN_TRANSIT→DELIVERED). No puede llevar a CANCELLED (eso va por /orders/{id}/cancel).
      *
      * @param id

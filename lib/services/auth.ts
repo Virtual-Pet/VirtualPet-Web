@@ -1,19 +1,14 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { api } from "@/lib/api";
 import { AuthService } from "@/lib/api-client";
-import { getCartSession } from "@/lib/cart-session";
 import type { AuthTokens, User as ApiUser, UserSummary } from "@/lib/api-client";
 
 export type User = ApiUser | UserSummary;
 
 export const authService = {
-  login: (email: string, password: string): Promise<AuthTokens> => {
-    const cartSessionId = getCartSession() || undefined;
-    return api<AuthTokens>("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password, cartSessionId }),
-    });
-  },
+  // The anonymous cart is merged automatically by the backend from the CART_SESSION cookie
+  // (carried via credentials: "include"); no cartSessionId is sent. The backend clears the
+  // cookie after merging.
+  login: (email: string, password: string): Promise<AuthTokens> =>
+    AuthService.postAuthLogin({ email, password }),
   logout: () => AuthService.postAuthLogout({ refreshToken: "dummy" }),
   register: (payload: { email: string; password: string; firstName: string; lastName: string }) =>
     AuthService.postAuthRegisterCustomer({
