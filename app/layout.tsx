@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ApiClientInit } from "@/components/ApiClientInit";
+import { ChatWidget } from "@/components/ChatWidget";
 import { setupApiClient } from "@/lib/api-client/setup";
 import "./globals.css";
 
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <p className="mt-1">© {new Date().getFullYear()} — Mar del Plata. Cuidamos a tu mascota.</p>
           </div>
         </footer>
+        <ChatWidget />
       </body>
     </html>
   );
