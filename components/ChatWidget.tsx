@@ -46,7 +46,7 @@ export function ChatWidget() {
     const token = getAuthToken();
 
     const params = new URLSearchParams({ sessionId, message: text });
-    const url = `${API_URL}/chat/stream?${params.toString()}`;
+    const url = `${API_URL}/api/v1/chat/stream?${params.toString()}`;
 
     const headers: Record<string, string> = { Accept: "text/event-stream" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
