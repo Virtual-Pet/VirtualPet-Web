@@ -13,11 +13,17 @@ export type User = {
 export function saveAuth(token: string, user: User) {
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(USER_KEY, JSON.stringify(user));
+  if (typeof window !== "undefined") {
+    sessionStorage.removeItem("chatSessionId");
+  }
 }
 
 export function clearAuth() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  if (typeof window !== "undefined") {
+    sessionStorage.removeItem("chatSessionId");
+  }
 }
 
 export function getToken(): string | null {
