@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/api";
 import { Badge } from "@/components/Badge";
+import { InvoiceRequestedBadge } from "@/components/InvoiceRequestedBadge";
 import ordersService from "@/lib/services/orders";
 import { getToken } from "@/lib/auth";
 import { useShipmentEvents } from "@/lib/hooks/useShipmentEvents";
@@ -104,7 +105,10 @@ export default function OrderDetailPage() {
             </p>
           )}
         </div>
-        <Badge status={order.status} />
+        <div className="flex flex-col items-end gap-1.5">
+          <Badge status={order.status} />
+          {order.requiresInvoice && <InvoiceRequestedBadge cuit={order.billingCuit} />}
+        </div>
       </div>
 
       {/* Productos */}

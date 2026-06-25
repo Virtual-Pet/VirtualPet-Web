@@ -93,6 +93,8 @@ export type Order = {
     city: string;
     zipCode: string;
   };
+  requiresInvoice?: boolean;
+  billingCuit?: string;
   items: OrderItem[];
 };
 

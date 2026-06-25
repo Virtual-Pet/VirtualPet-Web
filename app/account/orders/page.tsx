@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Package } from "lucide-react";
 import { formatPrice } from "@/lib/api";
 import { Badge } from "@/components/Badge";
+import { InvoiceRequestedBadge } from "@/components/InvoiceRequestedBadge";
 import ordersService from "@/lib/services/orders";
 import { getToken } from "@/lib/auth";
 import { useShipmentEvents } from "@/lib/hooks/useShipmentEvents";
@@ -113,6 +114,7 @@ export default function OrdersPage() {
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
                     <Badge status={o.status} />
+                    {o.requiresInvoice && <InvoiceRequestedBadge />}
                     <span className="text-base font-bold text-zinc-900">{formatPrice(o.total)}</span>
                   </div>
                 </Link>
