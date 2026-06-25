@@ -5,15 +5,29 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { PawPrint, ShoppingCart, Search } from "lucide-react";
 import { clearAuth, getUser, type User } from "@/lib/auth";
+import cartService from "@/lib/services/cart";
 
 export function SiteHeader() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [search, setSearch] = useState("");
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setUser(getUser());
+  }, []);
+
+  useEffect(() => {
+    function readCartCount() {
+      cartService
+        .getCart()
+        .then((c) => setCartCount(c.itemCount))
+        .catch(() => {});
+    }
+    readCartCount();
+    window.addEventListener("cart_updated", readCartCount);
+    return () => window.removeEventListener("cart_updated", readCartCount);
   }, []);
 
   function onSearch(e: FormEvent) {
@@ -57,7 +71,14 @@ export function SiteHeader() {
               Nosotros
             </Link>
             <Link href="/cart" className="flex items-center gap-1.5 hover:text-[var(--vp-primary)]">
-              <ShoppingCart size={17} strokeWidth={2} />
+              <span className="relative">
+                <ShoppingCart size={17} strokeWidth={2} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--vp-accent)] px-1 text-[10px] font-bold text-white">
+                    {cartCount}
+                  </span>
+                )}
+              </span>
               <span className="hidden sm:inline">Carrito</span>
             </Link>
             {user ? (

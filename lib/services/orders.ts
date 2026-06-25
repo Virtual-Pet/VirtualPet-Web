@@ -38,6 +38,7 @@ export async function listOrders(token?: string): Promise<Order[]> {
       status: shipment?.status || o.status || "CONFIRMED",
       total: o.total ? Number(o.total) : 0,
       createdAt: o.createdAt || "",
+      requiresInvoice: (o as unknown as { requiresInvoice?: boolean }).requiresInvoice ?? false,
       items: [],
     };
   });
@@ -65,6 +66,8 @@ export async function getOrder(id: string, token?: string): Promise<Order> {
       city: o.shippingAddress.city || "",
       zipCode: o.shippingAddress.postalCode || "",
     } : undefined,
+    requiresInvoice: (o as unknown as { requiresInvoice?: boolean }).requiresInvoice ?? false,
+    billingCuit: (o as unknown as { billingCuit?: string }).billingCuit ?? undefined,
     items: (o.lineItems || []).map((item) => ({
       variantId: item.skuId || "",
       productName: (item as unknown as { productName?: string }).productName || `SKU ${(item.skuId || "").slice(0, 8).toUpperCase()}`,

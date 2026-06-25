@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Package } from "lucide-react";
 import { formatPrice } from "@/lib/api";
 import { Badge } from "@/components/Badge";
+import { InvoiceRequestedBadge } from "@/components/InvoiceRequestedBadge";
 import ordersService from "@/lib/services/orders";
 import { getToken } from "@/lib/auth";
+import { useShipmentEvents } from "@/lib/hooks/useShipmentEvents";
 import type { Order } from "@/lib/types";
 
 function OrderSkeleton() {
@@ -31,19 +33,40 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const token = getToken();
+
+  const fetchOrders = useCallback(
+    () =>
+      ordersService
+        .listOrders(token ?? undefined)
+        .then(setOrders)
+        .catch(() => setOrders([])),
+    [token],
+  );
+
   useEffect(() => {
-    const token = getToken();
     if (!token) {
       setLoading(false);
       return;
     }
-    const fetchOrders = () =>
-      ordersService.listOrders(token).then(setOrders).catch(() => setOrders([]));
-
     fetchOrders().finally(() => setLoading(false));
     const interval = setInterval(fetchOrders, 30_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [token, fetchOrders]);
+
+  // Actualización en tiempo real vía SSE (todos los envíos del usuario).
+  useShipmentEvents({
+    enabled: !!token,
+    onUpdate: (e) => {
+      setOrders((prev) =>
+        prev.map((o) => (o.id === e.orderId ? { ...o, status: e.status } : o)),
+      );
+    },
+    onConnected: () => {
+      // Reconciliar la lista tras (re)conexión por si se perdieron eventos.
+      fetchOrders();
+    },
+  });
 
   return (
     <section className="mx-auto max-w-2xl px-4 py-10">
@@ -91,6 +114,7 @@ export default function OrdersPage() {
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
                     <Badge status={o.status} />
+                    {o.requiresInvoice && <InvoiceRequestedBadge />}
                     <span className="text-base font-bold text-zinc-900">{formatPrice(o.total)}</span>
                   </div>
                 </Link>
