@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/api";
 import { Badge } from "@/components/Badge";
 import ordersService from "@/lib/services/orders";
 import { getToken } from "@/lib/auth";
+import { useShipmentEvents } from "@/lib/hooks/useShipmentEvents";
 import type { Order } from "@/lib/types";
 
 export default function OrderDetailPage() {
@@ -16,19 +17,40 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const token = getToken();
+
+  const fetchOrder = useCallback(
+    () =>
+      ordersService
+        .getOrder(id, token ?? undefined)
+        .then(setOrder)
+        .catch(() => setError("No se pudo cargar el pedido.")),
+    [id, token],
+  );
+
   useEffect(() => {
-    const token = getToken();
     if (!token) {
       router.push("/login?redirect=/account/orders");
       return;
     }
-    const fetchOrder = () =>
-      ordersService.getOrder(id, token).then(setOrder).catch(() => setError("No se pudo cargar el pedido."));
-
     fetchOrder().finally(() => setLoading(false));
     const interval = setInterval(fetchOrder, 30_000);
     return () => clearInterval(interval);
-  }, [id, router]);
+  }, [token, router, fetchOrder]);
+
+  // Actualización en tiempo real vía SSE (estado del envío de este pedido).
+  useShipmentEvents({
+    orderId: id,
+    enabled: !!token,
+    onUpdate: (e) => {
+      if (e.orderId !== id) return;
+      setOrder((prev) => (prev ? { ...prev, status: e.status } : prev));
+    },
+    onConnected: () => {
+      // Reconciliar estado tras (re)conexión por si se perdieron eventos.
+      fetchOrder();
+    },
+  });
 
   if (loading) {
     return (
